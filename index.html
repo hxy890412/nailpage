@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,19 +9,50 @@
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .active-tab { color: #db2777; border-bottom: 3px solid #db2777; }
-        .calendar-day.full { background-color: #f3f4f6; color: #d1d5db; pointer-events: none; }
-        .calendar-day.today { border: 2px solid #db2777; }
-        .calendar-day.selected { background-color: #db2777; color: white; border-color: #db2777; }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .animate-slide-up { animation: slideUp 0.3s ease-out; }
+        .active-tab {
+            color: #db2777;
+            border-bottom: 3px solid #db2777;
+        }
+
+        .calendar-day.full {
+            background-color: #f3f4f6;
+            color: #d1d5db;
+            pointer-events: none;
+        }
+
+        .calendar-day.today {
+            border: 2px solid #db2777;
+        }
+
+        .calendar-day.selected {
+            background-color: #db2777;
+            color: white;
+            border-color: #db2777;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .animate-slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
     </style>
 </head>
+
 <body class="bg-gray-50 font-sans text-gray-900 pb-10">
 
     <header class="bg-white px-5 py-3 shadow-sm flex justify-between items-center sticky top-0 z-50">
         <div class="flex items-center gap-2">
-            <div class="w-9 h-9 bg-pink-600 rounded-lg flex items-center justify-center text-white italic font-serif text-xl shadow-md">N</div>
+            <div
+                class="w-9 h-9 bg-pink-600 rounded-lg flex items-center justify-center text-white italic font-serif text-xl shadow-md">
+                N</div>
             <span class="font-bold text-lg tracking-wider text-gray-800">NAIL STUDIO</span>
         </div>
         <img id="user-avatar" src="" class="w-10 h-10 rounded-full border-2 border-pink-100 hidden">
@@ -37,15 +69,23 @@
             <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="font-bold text-lg">選擇日期</h2>
-                    <span id="current-month" class="text-pink-600 font-medium text-sm bg-pink-50 px-3 py-1 rounded-full"></span>
+                    <span id="current-month"
+                        class="text-pink-600 font-medium text-sm bg-pink-50 px-3 py-1 rounded-full"></span>
                 </div>
                 <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2 text-gray-400">
-                    <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+                    <div>日</div>
+                    <div>一</div>
+                    <div>二</div>
+                    <div>三</div>
+                    <div>四</div>
+                    <div>五</div>
+                    <div>六</div>
                 </div>
                 <div id="calendar-grid" class="grid grid-cols-7 gap-1"></div>
                 <div class="mt-4 flex gap-4 text-xs text-gray-400 justify-center">
                     <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-pink-500"></span>可預約</div>
-                    <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-gray-200"></span>已約滿/休假</div>
+                    <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-gray-200"></span>已約滿/休假
+                    </div>
                 </div>
             </div>
 
@@ -54,7 +94,9 @@
                 <div id="time-slots" class="grid grid-cols-3 gap-2"></div>
             </div>
 
-            <button onclick="openBookingModal()" id="btn-next" class="w-full bg-pink-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-pink-100 opacity-50 cursor-not-allowed transition-all" disabled>
+            <button onclick="openBookingModal()" id="btn-next"
+                class="w-full bg-pink-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-pink-100 opacity-50 cursor-not-allowed transition-all"
+                disabled>
                 下一步：填寫預約細節
             </button>
         </section>
@@ -64,7 +106,8 @@
         </section>
 
         <section id="page-styles" class="hidden space-y-6">
-            <div class="bg-amber-50 border border-amber-100 p-3 rounded-xl flex items-center gap-2 text-amber-800 text-sm">
+            <div
+                class="bg-amber-50 border border-amber-100 p-3 rounded-xl flex items-center gap-2 text-amber-800 text-sm">
                 <i class="fa-solid fa-bullhorn animate-bounce"></i>
                 <marquee id="announcement" behavior="scroll" direction="left">載入中最新優惠訊息...</marquee>
             </div>
@@ -79,18 +122,21 @@
         <div class="bg-white w-full rounded-t-[40px] p-8 animate-slide-up">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-xl font-bold text-gray-800">確認預約細節</h3>
-                <button onclick="closeBookingModal()" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full"><i class="fa-solid fa-xmark"></i></button>
+                <button onclick="closeBookingModal()"
+                    class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full"><i
+                        class="fa-solid fa-xmark"></i></button>
             </div>
-            
+
             <form id="main-form" class="space-y-5" onsubmit="submitToGas(event)">
                 <div class="bg-pink-50 p-4 rounded-2xl">
                     <p class="text-sm text-pink-600 font-medium">預約時間</p>
                     <p id="display-datetime" class="text-lg font-bold text-pink-900"></p>
                 </div>
-                
+
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-2 ml-1">選擇款式</label>
-                    <select id="form-style" required class="w-full bg-gray-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-pink-500"></select>
+                    <select id="form-style" required
+                        class="w-full bg-gray-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-pink-500"></select>
                 </div>
 
                 <div class="flex items-center justify-between bg-gray-50 p-4 rounded-2xl">
@@ -100,10 +146,12 @@
 
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-2 ml-1">備註事項</label>
-                    <textarea id="form-note" class="w-full bg-gray-50 border-none rounded-2xl p-4" rows="2" placeholder="是否有延甲需求、指甲狀況..."></textarea>
+                    <textarea id="form-note" class="w-full bg-gray-50 border-none rounded-2xl p-4" rows="2"
+                        placeholder="是否有延甲需求、指甲狀況..."></textarea>
                 </div>
 
-                <button type="submit" id="submit-btn" class="w-full bg-gray-900 text-white py-5 rounded-3xl font-bold text-lg shadow-xl active:scale-95 transition-all">
+                <button type="submit" id="submit-btn"
+                    class="w-full bg-gray-900 text-white py-5 rounded-3xl font-bold text-lg shadow-xl active:scale-95 transition-all">
                     送出預約並通知美甲師
                 </button>
             </form>
@@ -111,7 +159,7 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbx2L-RAYquDcsV1Bk5M2DR4UmIKWLctWZ8EhOpg9ymjGk7UGyKMoA2OcxOox5qks4w7/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwOu1lc0eXwa8Pph6fU4rkJIAbcgm1ej8wVTgJst3LJYu4XAvrgLdp21V3QTnSUs2gH/exec";
         const LIFF_ID = "2009547519-PsSaE7hv";
 
         let appData = null;
@@ -167,9 +215,9 @@
 
             // 公告與 Banner
             const announcement = appData.promos.find(p => p.類型 === '廣播');
-            if(announcement) document.getElementById('announcement').innerText = announcement.內容;
+            if (announcement) document.getElementById('announcement').innerText = announcement.內容;
             const banner = appData.promos.find(p => p.類型 === '輪播圖');
-            if(banner) document.getElementById('banner-img').src = banner.內容;
+            if (banner) document.getElementById('banner-img').src = banner.內容;
 
             renderCalendar();
         }
@@ -178,31 +226,38 @@
             const grid = document.getElementById('calendar-grid');
             const now = new Date();
             document.getElementById('current-month').innerText = `${now.getMonth() + 1}月`;
-            
+
             let html = "";
             for (let i = 0; i < 21; i++) {
                 const date = new Date();
                 date.setDate(now.getDate() + i);
-                // 格式化為 YYYY-MM-DD 以匹配 GAS 的 formattedDate
-                const dStr = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
-                
-                // 使用新結構：找尋對應日期的設定
+
+                // 修正：手動拼接 YYYY-MM-DD，確保一定會補零
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const dStr = `${year}-${month}-${day}`;
+
+                // 除錯用：可以在 Console 看現在比對的是什麼字串
+                // console.log("正在比對日期:", dStr);
+
                 const dayConfig = appData.settings.find(s => s.formattedDate === dStr);
                 const availableCount = dayConfig ? dayConfig.availableSlots.length : 0;
 
                 const statusClass = (availableCount > 0) ? '' : 'full';
-                const countBadge = (availableCount > 0) ? `<span class="block text-[8px] mt-1 text-pink-500 font-bold">餘 ${availableCount}</span>` : '<span class="block text-[8px] mt-1 text-gray-300">滿/休</span>';
+                const countBadge = (availableCount > 0) ?
+                    `<span class="block text-[8px] mt-1 text-pink-500 font-bold">餘 ${availableCount}</span>` :
+                    '<span class="block text-[8px] mt-1 text-gray-300">滿/休</span>';
 
                 html += `
-                    <div onclick="clickDate('${dStr}', this)" class="calendar-day ${statusClass} p-3 rounded-xl border-2 border-transparent cursor-pointer transition-all hover:bg-pink-50">
-                        <span class="text-sm font-medium">${date.getDate()}</span>
-                        ${countBadge}
-                    </div>
-                `;
+            <div onclick="clickDate('${dStr}', this)" class="calendar-day ${statusClass} p-3 rounded-xl border-2 border-transparent cursor-pointer transition-all hover:bg-pink-50">
+                <span class="text-sm font-medium">${date.getDate()}</span>
+                ${countBadge}
+            </div>
+        `;
             }
             grid.innerHTML = html;
         }
-
         function clickDate(dateStr, el) {
             selectedDate = dateStr;
             document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
@@ -211,7 +266,7 @@
             // 找尋該日期的 availableSlots
             const dayConfig = appData.settings.find(s => s.formattedDate === dateStr);
             const timeGrid = document.getElementById('time-slots');
-            
+
             if (dayConfig && dayConfig.availableSlots.length > 0) {
                 timeGrid.innerHTML = dayConfig.availableSlots.map(slot => `
                     <button onclick="clickTime('${slot}', this)" class="time-btn border-2 border-pink-100 py-2 rounded-xl text-sm font-bold text-pink-700 hover:bg-pink-50 transition-all">${slot}</button>
@@ -221,7 +276,7 @@
                 timeGrid.innerHTML = "";
                 document.getElementById('time-section').classList.add('hidden');
             }
-            
+
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         }
 
@@ -233,7 +288,7 @@
             });
             el.classList.remove('text-pink-700');
             el.classList.add('bg-pink-600', 'text-white');
-            
+
             const btnNext = document.getElementById('btn-next');
             btnNext.disabled = false;
             btnNext.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -294,4 +349,5 @@
         window.onload = init;
     </script>
 </body>
+
 </html>
