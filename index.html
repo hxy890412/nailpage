@@ -3,25 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nail Art Studio | 預約看板</title>
+    <title>Nail Studio | 預約看板</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .active-tab { color: #db2777; border-bottom: 3px solid #db2777; font-weight: bold; }
-        .calendar-day { min-height: 100px; display: flex; flex-direction: column; align-items: center; padding: 6px 2px; border: 1px solid #f3f4f6; cursor: pointer; transition: background 0.2s; }
-        .calendar-day:active { background-color: #fdf2f8; }
-        .day-num { font-size: 13px; font-weight: bold; color: #4b5563; margin-bottom: 4px; }
+        .calendar-day { min-height: 105px; background: white; border: 0.5px solid #f3f4f6; display: flex; flex-direction: column; align-items: center; padding: 6px 2px; cursor: pointer; }
+        .day-num { font-size: 14px; font-weight: bold; color: #4b5563; margin-bottom: 4px; }
+        .slot-row { width: 100%; font-size: 10px; text-align: center; line-height: 1.5; font-weight: 600; }
         
-        /* 時段小字樣式 */
-        .slot-info { width: 100%; font-size: 10px; line-height: 1.4; text-align: center; font-weight: 500; }
-        .text-avail { color: #db2777; } /* 可預約：粉色 */
-        .text-full { color: #9ca3af; }  /* 已約滿：灰色 */
-        .text-off { color: #ef4444; }   /* 休假：紅色 */
+        /* 狀態顏色定義 */
+        .status-ok { color: #db2777; }    /* 可預約：粉色 */
+        .status-full { color: #9ca3af; }  /* 已約滿：灰色 */
+        .status-off { color: #ef4444; }   /* 休假：紅色 */
 
+        .calendar-day.past { background-color: #f9fafb; cursor: default; opacity: 0.6; }
         .calendar-day.empty { background-color: #fafafa; cursor: default; }
-        .calendar-day.past { background-color: #f9fafb; color: #d1d5db; cursor: default; }
-        .calendar-day.today { border: 2px solid #db2777; border-radius: 8px; z-index: 10; }
+        .calendar-day.today { outline: 2px solid #db2777; outline-offset: -2px; z-index: 10; border-radius: 4px; }
         
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .animate-slide-up { animation: slideUp 0.3s ease-out; }
@@ -31,82 +30,60 @@
 
     <header class="bg-white px-5 py-3 shadow-sm flex justify-between items-center sticky top-0 z-50">
         <div class="flex items-center gap-2">
-            <div class="w-9 h-9 bg-pink-600 rounded-lg flex items-center justify-center text-white italic font-serif text-xl shadow-md">N</div>
+            <div class="w-9 h-9 bg-pink-600 rounded-lg flex items-center justify-center text-white italic font-bold text-xl shadow-md">N</div>
             <span class="font-bold text-lg tracking-wider text-gray-800">NAIL STUDIO</span>
         </div>
-        <img id="user-avatar" src="" class="w-10 h-10 rounded-full border-2 border-pink-100 hidden">
+        <img id="user-avatar" src="" class="w-10 h-10 rounded-full hidden">
     </header>
 
-    <nav class="bg-white border-b flex text-center font-medium sticky top-[60px] z-40">
-        <button onclick="switchPage('booking')" id="tab-booking" class="flex-1 py-4 active-tab text-sm">預約時段</button>
+    <nav class="bg-white border-b flex text-center sticky top-[60px] z-40">
+        <button onclick="switchPage('booking')" id="tab-booking" class="flex-1 py-4 active-tab text-sm">預約看板</button>
         <button onclick="switchPage('notices')" id="tab-notices" class="flex-1 py-4 text-gray-500 text-sm">預約須知</button>
         <button onclick="switchPage('styles')" id="tab-styles" class="flex-1 py-4 text-gray-500 text-sm">活動款式</button>
     </nav>
 
-    <main class="max-w-md mx-auto p-3">
-        <section id="page-booking" class="space-y-4">
+    <main class="max-w-md mx-auto p-2">
+        <section id="page-booking">
             <div class="bg-white rounded-3xl p-4 shadow-sm border border-gray-100">
                 <div class="flex justify-between items-center mb-4 px-2">
-                    <h2 id="current-month" class="font-bold text-gray-700">月份載入中...</h2>
+                    <h2 id="current-month" class="font-bold text-gray-700">載入中...</h2>
                     <div class="text-[10px] flex gap-2">
-                        <span class="text-avail">●可預約</span>
-                        <span class="text-full">●已滿</span>
-                        <span class="text-off">●休假</span>
+                        <span class="status-ok">●可約</span><span class="status-full">●滿</span><span class="status-off">●休</span>
                     </div>
                 </div>
                 <div class="grid grid-cols-7 text-center text-xs mb-2 text-gray-400 font-bold">
                     <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
                 </div>
-                <div id="calendar-grid" class="grid grid-cols-7 gap-px bg-gray-100 border border-gray-100 overflow-hidden rounded-lg"></div>
+                <div id="calendar-grid" class="grid grid-cols-7 gap-px bg-gray-100 border border-gray-100 rounded-xl overflow-hidden"></div>
             </div>
         </section>
 
-        <section id="page-notices" class="hidden space-y-4">
-            <div id="notices-content" class="space-y-4"></div>
-        </section>
+        <section id="page-notices" class="hidden space-y-4"></section>
 
-        <section id="page-styles" class="hidden space-y-6">
-            <div class="bg-amber-50 border border-amber-100 p-3 rounded-xl flex items-center gap-2 text-amber-800 text-sm">
+        <section id="page-styles" class="hidden space-y-4">
+            <div class="bg-amber-50 p-3 rounded-xl text-amber-800 text-xs flex items-center gap-2">
                 <i class="fa-solid fa-bullhorn animate-bounce"></i>
-                <marquee id="announcement">最新優惠活動載入中...</marquee>
+                <marquee id="announcement">載入中...</marquee>
             </div>
             <div id="styles-grid" class="grid grid-cols-2 gap-4"></div>
         </section>
     </main>
 
     <div id="booking-modal" class="fixed inset-0 bg-black/60 z-[100] hidden flex items-end">
-        <div class="bg-white w-full rounded-t-[40px] p-8 animate-slide-up shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div class="bg-white w-full rounded-t-[40px] p-8 animate-slide-up shadow-2xl">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-bold">選擇預約細節</h3>
-                <button onclick="closeModal()" class="text-gray-400 text-2xl"><i class="fa-solid fa-circle-xmark"></i></button>
+                <h3 class="text-xl font-bold">選擇預約時段</h3>
+                <button onclick="closeModal()" class="text-gray-400 text-2xl"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            
-            <form id="main-form" class="space-y-5" onsubmit="submitToGas(event)">
-                <div class="bg-pink-50 p-4 rounded-2xl border border-pink-100 text-center">
-                    <p id="display-date" class="text-pink-700 font-bold text-lg"></p>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">預約時段</label>
-                    <div id="modal-time-slots" class="grid grid-cols-3 gap-2">
-                        </div>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">選擇款式</label>
-                    <select id="form-style" required class="w-full bg-gray-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-pink-500"></select>
-                </div>
-
+            <form class="space-y-6" onsubmit="submitForm(event)">
+                <div class="bg-pink-50 p-4 rounded-2xl text-center"><p id="modal-date-display" class="text-pink-700 font-bold text-lg"></p></div>
+                <div id="time-options" class="grid grid-cols-3 gap-3"></div>
+                <select id="form-style" required class="w-full bg-gray-50 border-none rounded-2xl p-4"></select>
                 <div class="flex items-center justify-between bg-gray-50 p-4 rounded-2xl">
-                    <span class="font-bold text-gray-700 text-sm">需要卸甲 ($200)</span>
+                    <span class="font-bold text-gray-700">需卸甲 ($200)</span>
                     <input type="checkbox" id="form-remove" class="w-6 h-6 accent-pink-600">
                 </div>
-
-                <textarea id="form-note" class="w-full bg-gray-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-pink-500" rows="2" placeholder="備註需求..."></textarea>
-
-                <button type="submit" id="submit-btn" class="w-full bg-gray-900 text-white py-5 rounded-3xl font-bold text-lg shadow-xl active:scale-95 transition-all opacity-50 cursor-not-allowed" disabled>
-                    確認送出預約
-                </button>
+                <button type="submit" id="submit-btn" disabled class="w-full bg-gray-900 text-white py-5 rounded-3xl font-bold opacity-50">確認送出</button>
             </form>
         </div>
     </div>
@@ -114,50 +91,37 @@
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbwOu1lc0eXwa8Pph6fU4rkJIAbcgm1ej8wVTgJst3LJYu4XAvrgLdp21V3QTnSUs2gH/exec";
         const LIFF_ID = "2009547519-PsSaE7hv";
-
         let appData = null;
-        let selectedDate = null;
-        let selectedTime = null;
+        let selDate, selTime;
 
         async function init() {
-            try {
-                await liff.init({ liffId: LIFF_ID });
-                if (!liff.isLoggedIn()) { liff.login(); return; }
-                const profile = await liff.getProfile();
-                if (profile.pictureUrl) {
-                    document.getElementById('user-avatar').src = profile.pictureUrl;
-                    document.getElementById('user-avatar').classList.remove('hidden');
-                }
-                fetchData();
-            } catch (err) { console.error('LIFF Init Error:', err); }
+            await liff.init({ liffId: LIFF_ID });
+            if (!liff.isLoggedIn()) liff.login();
+            fetchData();
         }
 
         async function fetchData() {
-            try {
-                const res = await fetch(`${GAS_URL}?action=getAppData`);
-                appData = await res.json();
-                renderUI();
-            } catch (err) { console.error('Fetch Data Error:', err); }
+            const res = await fetch(`${GAS_URL}?action=getAppData`);
+            appData = await res.json();
+            renderUI();
         }
 
         function renderUI() {
-            // 廣播
-            const broadcast = appData.promos.find(p => String(p.類型).trim() === '廣播');
+            // 公告 & 款式
+            const broadcast = appData.promos.find(p => p.類型.trim() === '廣播');
             if (broadcast) document.getElementById('announcement').innerText = broadcast.內容;
-            
-            // 款式
             document.getElementById('styles-grid').innerHTML = appData.styles.map(s => `
-                <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 text-center pb-2">
+                <div class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 text-center pb-2">
                     <img src="${s.圖片網址}" class="w-full h-32 object-cover">
-                    <p class="font-bold text-xs mt-2 truncate">${s.名稱}</p>
-                    <p class="text-pink-600 text-xs font-bold mt-1">$${s.價格}</p>
+                    <p class="font-bold text-xs mt-2">${s.名稱}</p>
+                    <p class="text-pink-600 text-xs font-bold">$${s.價格}</p>
                 </div>
             `).join('');
             document.getElementById('form-style').innerHTML = appData.styles.map(s => `<option value="${s.名稱}">${s.名稱}</option>`).join('');
-
+            
             // 須知
             document.getElementById('notices-content').innerHTML = appData.rules.map(r => `
-                <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-pink-500">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-pink-500 mb-3">
                     <h4 class="font-bold text-gray-800 mb-1">${r.標題}</h4>
                     <p class="text-sm text-gray-500">${r.詳細內容}</p>
                 </div>
@@ -175,101 +139,79 @@
             
             const firstDay = new Date(year, month, 1).getDay();
             const lastDate = new Date(year, month + 1, 0).getDate();
+            const today = new Date(); today.setHours(0,0,0,0);
 
             let html = "";
             for (let j = 0; j < firstDay; j++) html += `<div class="calendar-day empty"></div>`;
 
             for (let i = 1; i <= lastDate; i++) {
-                const date = new Date(year, month, i);
+                const d = new Date(year, month, i);
+                const isPast = d < today;
                 const dStr = `${year}/${month + 1}/${i}`;
                 
-                const today = new Date();
-                today.setHours(0,0,0,0);
-                const isPast = date < today;
-                const isToday = date.getTime() === today.getTime();
-
-                // 核心：抓取這天的所有時段狀態
-                const daySlots = appData.allSlots ? appData.allSlots.filter(s => {
-                    const sd = new Date(s.date);
-                    return sd.getFullYear() === year && (sd.getMonth()+1) === (month+1) && sd.getDate() === i;
-                }) : [];
-
-                // 定義顯示順序
-                const times = ['10:00', '14:00', '19:00'];
-                let slotHtml = "";
-                
-                times.forEach(t => {
-                    const info = daySlots.find(s => String(s.time).includes(t));
-                    const status = info ? info.status : '休假';
-                    
-                    let statusClass = 'text-off';
-                    let statusText = '休';
-                    if (status === '可預約') { statusClass = 'text-avail'; statusText = '可'; }
-                    else if (status === '已約滿') { statusClass = 'text-full'; statusText = '滿'; }
-                    
-                    slotHtml += `<div class="slot-info ${statusClass}">${t} ${statusText}</div>`;
-                });
+                // 抓取該日期的三個時段資料
+                const slots = ['10:00', '14:00', '19:00'].map(t => {
+                    // 比對邏輯：尋找 allSlots 中符合日期與時間的項目
+                    const match = appData.allSlots.find(s => {
+                        const sd = new Date(s.date);
+                        return sd.getFullYear() === year && (sd.getMonth()+1) === (month+1) && sd.getDate() === i && String(s.time).includes(t);
+                    });
+                    const status = match ? match.status.trim() : '休假';
+                    let cls = 'status-off', txt = '休';
+                    if (status === '可預約') { cls = 'status-ok'; txt = '可'; }
+                    else if (status === '已約滿') { cls = 'status-full'; txt = '滿'; }
+                    return `<div class="slot-row ${cls}">${t} ${txt}</div>`;
+                }).join('');
 
                 html += `
-                    <div onclick="${isPast ? '' : `clickDate('${dStr}')`}" class="calendar-day bg-white ${isPast ? 'past' : ''} ${isToday ? 'today' : ''}">
+                    <div onclick="${isPast ? '' : `openModal('${dStr}')`}" class="calendar-day ${isPast ? 'past' : ''} ${d.getTime() === today.getTime() ? 'today' : ''}">
                         <span class="day-num">${i}</span>
-                        ${slotHtml}
+                        ${slots}
                     </div>
                 `;
             }
             grid.innerHTML = html;
         }
 
-        function clickDate(dStr) {
-            selectedDate = dStr;
-            selectedTime = null; // 重置
-            document.getElementById('display-date').innerText = `📅 ${dStr}`;
+        function openModal(dStr) {
+            selDate = dStr; selTime = null;
+            document.getElementById('modal-date-display').innerText = `📅 ${dStr}`;
             
-            // 生成彈窗內的時段按鈕
-            const daySlots = appData.allSlots.filter(s => {
-                const sd = new Date(s.date);
-                const target = new Date(dStr);
-                return sd.getTime() === target.getTime();
-            });
-
+            // 彈窗內的時段按鈕
             const times = ['10:00', '14:00', '19:00'];
-            const timeContainer = document.getElementById('modal-time-slots');
+            const container = document.getElementById('time-options');
             
-            timeContainer.innerHTML = times.map(t => {
-                const info = daySlots.find(s => String(s.time).includes(t));
-                const isAvail = info && info.status === '可預約';
-                
+            container.innerHTML = times.map(t => {
+                const match = appData.allSlots.find(s => {
+                    const sd = new Date(s.date);
+                    const target = new Date(dStr);
+                    return sd.getTime() === target.getTime() && String(s.time).includes(t);
+                });
+                const isAvail = match && match.status.trim() === '可預約';
                 return `
-                    <button type="button" 
-                        onclick="${isAvail ? `selectTime('${t}', this)` : ''}"
-                        class="py-3 rounded-xl text-sm font-bold border ${isAvail ? 'border-pink-200 text-pink-600 bg-white' : 'bg-gray-100 text-gray-300 border-transparent cursor-not-allowed'}">
-                        ${t}<br><span class="text-[10px]">${isAvail ? '可預約' : (info && info.status === '已約滿' ? '滿' : '休')}</span>
+                    <button type="button" onclick="${isAvail ? `selectTime('${t}', this)` : ''}" 
+                        class="py-4 rounded-2xl border text-sm font-bold ${isAvail ? 'border-pink-200 text-pink-600' : 'bg-gray-100 text-gray-300 border-transparent cursor-not-allowed'}">
+                        ${t}<br><span class="text-[10px]">${isAvail ? '可預約' : (match && match.status.trim() === '已約滿' ? '已滿' : '休假')}</span>
                     </button>
                 `;
             }).join('');
-
+            
             document.getElementById('submit-btn').disabled = true;
-            document.getElementById('submit-btn').classList.add('opacity-50', 'cursor-not-allowed');
+            document.getElementById('submit-btn').classList.add('opacity-50');
             document.getElementById('booking-modal').classList.remove('hidden');
         }
 
         function selectTime(t, el) {
-            selectedTime = t;
-            document.querySelectorAll('#modal-time-slots button').forEach(b => {
-                b.classList.remove('bg-pink-600', 'text-white');
-                if(!b.classList.contains('text-gray-300')) b.classList.add('text-pink-600', 'bg-white');
-            });
-            el.classList.remove('text-pink-600', 'bg-white');
+            selTime = t;
+            document.querySelectorAll('#time-options button').forEach(b => b.classList.remove('bg-pink-600', 'text-white'));
             el.classList.add('bg-pink-600', 'text-white');
-            
-            const btn = document.getElementById('submit-btn');
-            btn.disabled = false;
-            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            document.getElementById('submit-btn').disabled = false;
+            document.getElementById('submit-btn').classList.remove('opacity-50');
         }
 
         function closeModal() { document.getElementById('booking-modal').classList.add('hidden'); }
 
-        async function submitToGas(e) {
+        async function submitForm(e) {
             e.preventDefault();
             const btn = document.getElementById('submit-btn');
             btn.disabled = true; btn.innerText = "傳送中...";
@@ -278,24 +220,21 @@
                 action: 'submitBooking',
                 userId: profile.userId,
                 name: profile.displayName,
-                date: selectedDate,
-                time: selectedTime,
+                date: selDate, time: selTime,
                 style: document.getElementById('form-style').value,
                 removeNails: document.getElementById('form-remove').checked ? "是" : "否",
                 note: document.getElementById('form-note').value
             };
             await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
-            await liff.sendMessages([{ type: 'text', text: `💅 預約成功！\n日期：${selectedDate}\n時間：${selectedTime}\n期待見到妳！` }]);
+            await liff.sendMessages([{ type: 'text', text: `✅ 預約成功！\n日期：${selDate}\n時間：${selTime}` }]);
             liff.closeWindow();
         }
 
-        function switchPage(page) {
-            ['booking', 'notices', 'styles'].forEach(p => {
-                document.getElementById(`page-${p}`).classList.add('hidden');
-                document.getElementById(`tab-${p}`).classList.remove('active-tab');
-            });
-            document.getElementById(`page-${page}`).classList.remove('hidden');
-            document.getElementById(`tab-${page}`).classList.add('active-tab');
+        function switchPage(p) {
+            ['booking', 'notices', 'styles'].forEach(id => document.getElementById(`page-${id}`).classList.add('hidden'));
+            document.getElementById(`page-${p}`).classList.remove('hidden');
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('active-tab'));
+            document.getElementById(`tab-${p}`).classList.add('active-tab');
         }
 
         window.onload = init;
