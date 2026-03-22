@@ -3,15 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nail Art Studio | 專業美甲預約</title>
+    <title>Nail Studio | 預約看板</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .active-tab { color: #db2777; border-bottom: 3px solid #db2777; font-weight: bold; }
-        /* 滿/休/空白格的樣式 */
-        .calendar-day.full, .calendar-day.empty { background-color: #f9fafb; color: #d1d5db; pointer-events: none; }
-        .calendar-day.selected { background-color: #db2777 !important; color: white !important; border-radius: 1rem; shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .calendar-grid { display: grid; grid-template-cols: repeat(7, 1fr); gap: 1px; background-color: #f3f4f6; border: 1px solid #f3f4f6; }
+        .calendar-day { min-height: 100px; background: white; display: flex; flex-direction: column; align-items: center; padding: 5px 2px; }
+        .day-num { font-size: 11px; font-weight: bold; color: #9ca3af; margin-bottom: 4px; }
+        .slot-btn { width: 92%; font-size: 10px; margin-top: 2px; padding: 3px 0; text-align: center; border-radius: 6px; font-weight: bold; transition: all 0.2s; }
+        /* 狀態樣式 */
+        .status-available { background-color: #fdf2f8; color: #db2777; border: 1px solid #fbcfe8; cursor: pointer; }
+        .status-available:active { background-color: #db2777; color: white; }
+        .status-full { background-color: #f3f4f6; color: #9ca3af; border: 1px solid #e5e7eb; cursor: not-allowed; }
+        .status-off { background-color: #fef2f2; color: #f87171; border: 1px solid #fee2e2; cursor: not-allowed; }
+        .calendar-day.empty { background-color: #fafafa; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .animate-slide-up { animation: slideUp 0.3s ease-out; }
     </style>
@@ -20,82 +27,57 @@
 
     <header class="bg-white px-5 py-3 shadow-sm flex justify-between items-center sticky top-0 z-50">
         <div class="flex items-center gap-2">
-            <div class="w-9 h-9 bg-pink-600 rounded-lg flex items-center justify-center text-white italic font-serif text-xl shadow-md">N</div>
-            <span class="font-bold text-lg tracking-wider text-gray-800">NAIL STUDIO</span>
+            <div class="w-8 h-8 bg-pink-600 rounded-lg flex items-center justify-center text-white italic font-bold text-lg">N</div>
+            <span class="font-bold text-gray-800 tracking-tight">NAIL STUDIO</span>
         </div>
-        <img id="user-avatar" src="" class="w-10 h-10 rounded-full border-2 border-pink-100 hidden">
+        <img id="user-avatar" src="" class="w-8 h-8 rounded-full hidden">
     </header>
 
-    <nav class="bg-white border-b flex text-center font-medium sticky top-[60px] z-40">
-        <button onclick="switchPage('booking')" id="tab-booking" class="flex-1 py-4 active-tab">預約時段</button>
-        <button onclick="switchPage('notices')" id="tab-notices" class="flex-1 py-4 text-gray-500">預約須知</button>
-        <button onclick="switchPage('styles')" id="tab-styles" class="flex-1 py-4 text-gray-500">款式介紹</button>
+    <nav class="bg-white border-b flex text-center sticky top-[52px] z-40">
+        <button onclick="switchPage('booking')" id="tab-booking" class="flex-1 py-3 active-tab text-sm">預約看板</button>
+        <button onclick="switchPage('styles')" id="tab-styles" class="flex-1 py-3 text-gray-500 text-sm">款式介紹</button>
     </nav>
 
-    <main class="max-w-md mx-auto p-4">
-        <section id="page-booking" class="space-y-4">
-            <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="font-bold text-lg text-gray-700">選擇日期</h2>
-                    <span id="current-month" class="text-pink-600 font-bold text-sm bg-pink-50 px-4 py-1 rounded-full"></span>
+    <main class="max-w-md mx-auto p-2">
+        <section id="page-booking">
+            <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+                <div class="p-4 flex justify-between items-center">
+                    <h2 id="current-month" class="font-bold text-gray-700">月份載入中...</h2>
+                    <div class="flex gap-2 text-[10px]">
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-circle text-pink-400"></i>可約</span>
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-circle text-gray-300"></i>滿/休</span>
+                    </div>
                 </div>
-                <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2 text-gray-400 font-bold">
+                
+                <div class="grid grid-cols-7 text-center text-[11px] py-2 bg-gray-50 text-gray-400 font-bold">
                     <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
                 </div>
-                <div id="calendar-grid" class="grid grid-cols-7 gap-1"></div>
+                <div id="calendar-grid" class="calendar-grid"></div>
             </div>
-
-            <div id="time-section" class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 hidden">
-                <h3 class="font-bold mb-3 text-gray-700 italic">Available Time</h3>
-                <div id="time-slots" class="grid grid-cols-3 gap-2"></div>
-            </div>
-
-            <button onclick="openBookingModal()" id="btn-next" class="w-full bg-pink-600 text-white py-4 rounded-2xl font-bold shadow-lg opacity-50 cursor-not-allowed transition-all" disabled>
-                下一步：填寫細節
-            </button>
         </section>
 
-        <section id="page-notices" class="hidden space-y-4">
-            <div id="notices-content" class="space-y-4"></div>
-        </section>
-
-        <section id="page-styles" class="hidden space-y-6">
-            <div class="bg-amber-50 border border-amber-100 p-3 rounded-xl flex items-center gap-2 text-amber-800 text-sm">
-                <i class="fa-solid fa-bullhorn animate-bounce"></i>
-                <marquee id="announcement" behavior="scroll" direction="left">歡迎光臨！最新優惠活動載入中...</marquee>
-            </div>
-            <div id="promo-banner" class="w-full h-44 rounded-3xl overflow-hidden shadow-sm bg-pink-50 relative">
-                <img id="banner-img" src="" class="w-full h-full object-cover hidden">
-                <div id="banner-placeholder" class="absolute inset-0 flex items-center justify-center text-pink-200">
-                    <i class="fa-regular fa-image text-4xl"></i>
-                </div>
-            </div>
+        <section id="page-styles" class="hidden p-2">
             <div id="styles-grid" class="grid grid-cols-2 gap-4"></div>
         </section>
     </main>
 
     <div id="booking-modal" class="fixed inset-0 bg-black/60 z-[100] hidden flex items-end">
-        <div class="bg-white w-full rounded-t-[40px] p-8 animate-slide-up shadow-2xl">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-bold text-gray-800">預約確認</h3>
-                <button onclick="closeBookingModal()" class="text-gray-400 text-2xl"><i class="fa-solid fa-circle-xmark"></i></button>
+        <div class="bg-white w-full rounded-t-[30px] p-6 animate-slide-up shadow-2xl">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-lg font-bold">填寫預約資料</h3>
+                <button onclick="closeModal()" class="text-gray-400 text-xl"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <form id="main-form" class="space-y-4" onsubmit="submitToGas(event)">
-                <div class="bg-pink-50 p-4 rounded-2xl border border-pink-100 text-center">
-                    <p id="display-datetime" class="text-pink-700 font-black text-lg"></p>
+            <form class="space-y-4" onsubmit="submitBooking(event)">
+                <div class="bg-pink-50 p-3 rounded-xl text-center">
+                    <p id="display-datetime" class="text-pink-700 font-bold"></p>
                 </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-600 mb-1 ml-1">選擇款式</label>
-                    <select id="form-style" required class="w-full bg-gray-50 border-none rounded-xl p-4 focus:ring-2 focus:ring-pink-500"></select>
+                <select id="form-style" required class="w-full bg-gray-50 border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-pink-500"></select>
+                <div class="flex items-center justify-between bg-gray-50 p-3 rounded-xl">
+                    <span class="text-sm font-bold text-gray-600">需要卸甲 ($200)</span>
+                    <input type="checkbox" id="form-remove" class="w-5 h-5 accent-pink-600">
                 </div>
-                <div class="flex items-center justify-between bg-gray-50 p-4 rounded-xl">
-                    <span class="font-bold text-gray-600">是否需要卸甲？</span>
-                    <input type="checkbox" id="form-remove" class="w-6 h-6 accent-pink-600">
-                </div>
-                <textarea id="form-note" class="w-full bg-gray-50 border-none rounded-xl p-4 focus:ring-2 focus:ring-pink-500" rows="2" placeholder="備註（延甲需求、過敏史...）"></textarea>
-                <button type="submit" id="submit-btn" class="w-full bg-gray-900 text-white py-5 rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-all">
-                    確認送出預約
-                </button>
+                <textarea id="form-note" class="w-full bg-gray-50 border-none rounded-xl p-3 text-sm" rows="2" placeholder="備註需求..."></textarea>
+                <button type="submit" id="submit-btn" class="w-full bg-pink-600 text-white py-4 rounded-xl font-bold shadow-lg">確認預約</button>
             </form>
         </div>
     </div>
@@ -103,248 +85,140 @@
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbwOu1lc0eXwa8Pph6fU4rkJIAbcgm1ej8wVTgJst3LJYu4XAvrgLdp21V3QTnSUs2gH/exec";
         const LIFF_ID = "2009547519-PsSaE7hv";
-
         let appData = null;
-        let selectedDate = null;
-        let selectedTime = null;
-
-        // --- 核心修正函數：標準化時間顯示 (只顯示 HH:mm) ---
-        function normalizeTime(timeStr) {
-            if (!timeStr) return '';
-            
-            // 如果 GAS 傳來的是 Date 物件字串 (如截圖)，嘗試解析它
-            if (timeStr.includes('GMT') || timeStr.includes('台北標準時間')) {
-                try {
-                    const dateObj = new Date(timeStr);
-                    if (!isNaN(dateObj.getTime())) {
-                        const h = String(dateObj.getHours()).padStart(2, '0');
-                        const m = String(dateObj.getMinutes()).padStart(2, '0');
-                        return `${h}:${m}`;
-                    }
-                } catch (e) { console.error('Time Parse Error:', e); }
-            }
-            
-            // 如果原本就是 HH:mm (例如 10:00)，只取前五碼
-            const timeMatch = timeStr.match(/\d{1,2}:\d{2}/);
-            return timeMatch ? timeMatch[0] : timeStr;
-        }
-
-        function normalizeDate(dateStr) {
-            const d = new Date(dateStr);
-            if (isNaN(d.getTime())) return dateStr;
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${y}-${m}-${day}`;
-        }
+        let selDate, selTime;
 
         async function init() {
-            try {
-                await liff.init({ liffId: LIFF_ID });
-                if (!liff.isLoggedIn()) { liff.login(); return; }
-                const profile = await liff.getProfile();
-                if (profile.pictureUrl) {
-                    document.getElementById('user-avatar').src = profile.pictureUrl;
-                    document.getElementById('user-avatar').classList.remove('hidden');
-                }
-                fetchData();
-            } catch (err) { console.error('LIFF Init Error:', err); }
+            await liff.init({ liffId: LIFF_ID });
+            if (!liff.isLoggedIn()) liff.login();
+            const profile = await liff.getProfile();
+            if (profile.pictureUrl) {
+                document.getElementById('user-avatar').src = profile.pictureUrl;
+                document.getElementById('user-avatar').classList.remove('hidden');
+            }
+            fetchData();
         }
 
         async function fetchData() {
-            try {
-                const res = await fetch(`${GAS_URL}?action=getAppData`);
-                appData = await res.json();
-                
-                // 強制轉換 GAS 傳回的所有日期格式為 YYYY-MM-DD
-                appData.settings = appData.settings.map(s => ({
-                    ...s,
-                    formattedDate: normalizeDate(s.formattedDate)
-                }));
-                
-                renderUI();
-            } catch (err) { console.error('Fetch Data Error:', err); }
+            const res = await fetch(`${GAS_URL}?action=getAppData`);
+            appData = await res.json();
+            renderUI();
         }
 
         function renderUI() {
-            // 公告
-            const broadcast = appData.promos.find(p => String(p.類型).trim() === '廣播');
-            if (broadcast) document.getElementById('announcement').innerText = broadcast.內容;
+            // 填充款式下拉選單
+            document.getElementById('form-style').innerHTML = appData.styles.map(s => `<option value="${s.名稱}">${s.名稱}</option>`).join('');
             
-            const banner = appData.promos.find(p => String(p.類型).trim() === '輪播圖');
-            if (banner && banner.內容) {
-                const img = document.getElementById('banner-img');
-                img.src = banner.內容;
-                img.classList.remove('hidden');
-            }
-
-            // 款式
-            const grid = document.getElementById('styles-grid');
-            const select = document.getElementById('form-style');
-            grid.innerHTML = appData.styles.map(s => `
-                <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:border-pink-100 transition-all">
+            // 填充款式牆
+            document.getElementById('styles-grid').innerHTML = appData.styles.map(s => `
+                <div class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
                     <img src="${s.圖片網址}" class="w-full h-32 object-cover">
-                    <div class="p-3 text-center">
-                        <p class="font-bold text-xs text-gray-700 truncate">${s.名稱}</p>
-                        <p class="text-pink-600 font-bold text-[10px] mt-1">$${s.價格}</p>
+                    <div class="p-2 text-center">
+                        <p class="font-bold text-xs">${s.名稱}</p>
+                        <p class="text-pink-600 font-bold text-xs">$${s.價格}</p>
                     </div>
-                </div>
-            `).join('');
-            select.innerHTML = appData.styles.map(s => `<option value="${s.名稱}">${s.名稱}</option>`).join('');
-
-            // 須知
-            document.getElementById('notices-content').innerHTML = appData.rules.map(r => `
-                <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-pink-500">
-                    <h4 class="font-bold text-gray-800 mb-1">${r.標題}</h4>
-                    <p class="text-sm text-gray-400 leading-relaxed">${r.詳細內容}</p>
                 </div>
             `).join('');
 
             renderCalendar();
         }
 
-        // --- 核心修正：日曆從 3/1 開始生成整個月 ---
         function renderCalendar() {
             const grid = document.getElementById('calendar-grid');
             const now = new Date();
             const year = now.getFullYear();
-            const month = now.getMonth(); // 0-11
+            const month = now.getMonth();
+            document.getElementById('current-month').innerText = `${year}年 ${month + 1}月`;
 
-            document.getElementById('current-month').innerText = `${month + 1}月`;
-            
-            // 抓取當月第一天與最後一天
-            const firstDayOfMonth = new Date(year, month, 1);
-            const lastDayOfMonth = new Date(year, month + 1, 0);
-            
-            // 抓取第一天是週幾 (0-6, 週日為0)
-            const startDayOfWeek = firstDayOfMonth.getDay(); 
-            const totalDaysInMonth = lastDayOfMonth.getDate();
+            const firstDay = new Date(year, month, 1).getDay();
+            const lastDate = new Date(year, month + 1, 0).getDate();
 
             let html = "";
-            
-            // 1. 補上月份開頭的空白格 (週日開始排序)
-            for (let j = 0; j < startDayOfWeek; j++) {
-                html += `<div class="calendar-day empty p-3 rounded-xl"></div>`;
-            }
+            // 空白格
+            for (let j = 0; j < firstDay; j++) html += `<div class="calendar-day empty"></div>`;
 
-            // 2. 生成當月每一天
-            for (let i = 1; i <= totalDaysInMonth; i++) {
-                const date = new Date(year, month, i);
-                const dStr = normalizeDate(date); // 標準 YYYY-MM-DD 比對用
-
-                // 過濾掉過去的日期 (今天以前不能預約)
-                const today = new Date();
-                today.setHours(0,0,0,0);
-                const isPast = date < today;
-
-                const config = appData.settings.find(s => s.formattedDate === dStr);
-                const count = config ? config.availableSlots.length : 0;
+            // 日期格
+            for (let i = 1; i <= lastDate; i++) {
+                const dateStr = `${year}/${month + 1}/${i}`;
                 
-                // 狀態判斷：過去、沒開、開了但沒人、亮亮
-                const isOff = !config || isPast; 
-                const isFull = count === 0;
+                // 找出這天的資料
+                const dayData = appData.settings.find(s => {
+                    const d = new Date(s.formattedDate);
+                    return d.getFullYear() === year && (d.getMonth() + 1) === (month + 1) && d.getDate() === i;
+                });
 
-                const statusClass = (isOff || isFull) ? 'full' : '';
+                // 這邊是核心邏輯：對應妳的試算表 3 個時段
+                // 假設妳的 GAS 回傳的 availableSlots 格式是：["10:00|可預約", "14:00|已約滿", "19:00|休假"]
+                // 或者只是 ["10:00", "19:00"] (代表只有這兩個是可預約)
                 
-                // 角標提示：滿、休、餘X
-                let badge = '<span class="text-gray-300">滿</span>';
-                if(isPast || isOff) badge = '<span class="text-gray-200">無</span>';
-                else if(!isFull) badge = `<span class="text-pink-500 font-bold">餘${count}</span>`;
+                const timeSlots = [
+                    { t: '10:00', status: '滿' },
+                    { t: '14:00', status: '滿' },
+                    { t: '19:00', status: '滿' }
+                ];
+
+                if (dayData && dayData.availableSlots) {
+                    dayData.availableSlots.forEach(slotStr => {
+                        const s = String(slotStr).trim();
+                        // 判定「可預約」的邏輯：只要字串包含時間且沒說滿/休，或妳 GAS 已經過濾好
+                        if (s.includes('10:00')) timeSlots[0].status = '預約';
+                        if (s.includes('14:00')) timeSlots[1].status = '預約';
+                        if (s.includes('19:00')) timeSlots[2].status = '預約';
+                    });
+                }
 
                 html += `
-                    <div onclick="clickDate('${dStr}', this)" class="calendar-day ${statusClass} p-3 rounded-xl border-2 border-transparent cursor-pointer transition-all flex flex-col items-center">
-                        <span class="text-sm font-bold ${isPast ? 'text-gray-300' : ''}">${i}</span>
-                        <span class="text-[9px] mt-1 font-bold">${badge}</span>
+                    <div class="calendar-day">
+                        <span class="day-num">${i}</span>
+                        ${timeSlots.map(slot => {
+                            const isAvail = slot.status === '預約';
+                            return `<div 
+                                onclick="${isAvail ? `openModal('${dateStr}', '${slot.t}')` : ''}"
+                                class="slot-btn ${isAvail ? 'status-available' : 'status-full'}">
+                                ${isAvail ? slot.t : '滿'}
+                            </div>`;
+                        }).join('')}
                     </div>
                 `;
             }
             grid.innerHTML = html;
         }
 
-        function clickDate(dateStr, el) {
-            // 如果點到不能預約的，就沒反應
-            if (el.classList.contains('full') || el.classList.contains('empty')) return;
-
-            selectedDate = dateStr;
-            document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
-            el.classList.add('selected');
-
-            const config = appData.settings.find(s => s.formattedDate === dateStr);
-            const timeGrid = document.getElementById('time-slots');
-
-            if (config && config.availableSlots.length > 0) {
-                timeGrid.innerHTML = config.availableSlots.map(t => {
-                    // --- 核心修正：顯示前先標準化時間 ---
-                    const normalizedTime = normalizeTime(t);
-                    return `<button onclick="clickTime('${normalizedTime}', this)" class="time-btn border border-pink-100 py-3 rounded-xl text-sm font-bold text-pink-700 bg-white transition-all shadow-sm active:scale-95">${normalizedTime}</button>`;
-                }).join('');
-                document.getElementById('time-section').classList.remove('hidden');
-            } else {
-                document.getElementById('time-section').classList.add('hidden');
-            }
-            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-        }
-
-        function clickTime(time, el) {
-            selectedTime = time;
-            document.querySelectorAll('.time-btn').forEach(b => {
-                b.className = 'time-btn border border-pink-100 py-3 rounded-xl text-sm font-bold text-pink-700 bg-white transition-all shadow-sm active:scale-95';
-            });
-            el.className = 'time-btn bg-pink-600 text-white py-3 rounded-xl text-sm font-bold shadow-md';
-            const btnNext = document.getElementById('btn-next');
-            btnNext.disabled = false;
-            btnNext.classList.remove('opacity-50', 'cursor-not-allowed');
-        }
-
-        function openBookingModal() {
-            document.getElementById('display-datetime').innerText = `📅 ${selectedDate} ⏰ ${selectedTime}`;
+        function openModal(d, t) {
+            selDate = d; selTime = t;
+            document.getElementById('display-datetime').innerText = `📅 ${d}  ⏰ ${t}`;
             document.getElementById('booking-modal').classList.remove('hidden');
         }
 
-        function closeBookingModal() { document.getElementById('booking-modal').classList.add('hidden'); }
+        function closeModal() { document.getElementById('booking-modal').classList.add('hidden'); }
 
-        async function submitToGas(e) {
+        async function submitBooking(e) {
             e.preventDefault();
             const btn = document.getElementById('submit-btn');
-            btn.disabled = true;
-            btn.innerText = "傳送預約中...";
+            btn.disabled = true; btn.innerText = "傳送中...";
 
-            try {
-                const profile = await liff.getProfile();
-                const payload = {
-                    action: 'submitBooking',
-                    userId: profile.userId,
-                    name: profile.displayName,
-                    date: selectedDate,
-                    time: selectedTime,
-                    style: document.getElementById('form-style').value,
-                    removeNails: document.getElementById('form-remove').checked ? "是" : "否",
-                    note: document.getElementById('form-note').value
-                };
+            const profile = await liff.getProfile();
+            const payload = {
+                action: 'submitBooking',
+                userId: profile.userId,
+                name: profile.displayName,
+                date: selDate,
+                time: selTime,
+                style: document.getElementById('form-style').value,
+                removeNails: document.getElementById('form-remove').checked ? "是" : "否",
+                note: document.getElementById('form-note').value
+            };
 
-                const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
-                if (res.ok) {
-                    await liff.sendMessages([{
-                        type: 'text',
-                        text: `💅 預約申請成功！\n\n📅 日期：${selectedDate}\n⏰ 時間：${selectedTime}\n✨ 款式：${payload.style}\n\n美甲師會儘速為您確認預約！`
-                    }]);
-                    liff.closeWindow();
-                }
-            } catch (err) {
-                alert('網路異常，請稍後再試');
-                btn.disabled = false;
-                btn.innerText = "重新送出";
-            }
+            await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
+            await liff.sendMessages([{ type: 'text', text: `💅 預約成功！\n日期：${selDate}\n時間：${selTime}\n期待您的光臨！` }]);
+            liff.closeWindow();
         }
 
-        function switchPage(page) {
-            ['booking', 'notices', 'styles'].forEach(p => {
-                document.getElementById(`page-${p}`).classList.add('hidden');
-                document.getElementById(`tab-${p}`).classList.remove('active-tab');
-                document.getElementById(`tab-${p}`).classList.add('text-gray-500');
-            });
-            document.getElementById(`page-${page}`).classList.remove('hidden');
-            document.getElementById(`tab-${page}`).classList.add('active-tab');
+        function switchPage(p) {
+            document.getElementById('page-booking').classList.toggle('hidden', p !== 'booking');
+            document.getElementById('page-styles').classList.toggle('hidden', p !== 'styles');
+            document.getElementById('tab-booking').className = p === 'booking' ? 'flex-1 py-3 active-tab text-sm' : 'flex-1 py-3 text-gray-500 text-sm';
+            document.getElementById('tab-styles').className = p === 'styles' ? 'flex-1 py-3 active-tab text-sm' : 'flex-1 py-3 text-gray-500 text-sm';
         }
 
         window.onload = init;
