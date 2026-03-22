@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nail Art Studio | 預約系統</title>
+    <title>151.5 Nail Studio | 預約系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -22,7 +22,7 @@
             </div>
             <div>
                 <h1 class="font-bold text-gray-800 leading-none text-lg">Nail Studio</h1>
-                <p class="text-[10px] text-pink-500 font-bold uppercase tracking-widest">Booking</p>
+                <p class="text-[10px] text-[#8c7662] font-bold uppercase tracking-widest">Booking</p>
             </div>
         </div>
         <img id="user-avatar" class="w-10 h-10 rounded-full border-2 border-pink-100 hidden">
@@ -30,8 +30,8 @@
 
     <nav class="flex gap-3 px-6 py-4 overflow-x-auto no-scrollbar">
         <button onclick="switchPage('booking')" id="tab-booking" class="nav-tag active">預約時段</button>
-        <button onclick="switchPage('promo')" id="tab-promo" class="nav-tag">活動與公告</button>
         <button onclick="switchPage('styles')" id="tab-styles" class="nav-tag">款式介紹</button>
+        <button onclick="switchPage('promo')" id="tab-promo" class="nav-tag">活動與公告</button>
         <button onclick="switchPage('notices')" id="tab-notices" class="nav-tag">預約須知</button>
     </nav>
 
@@ -114,7 +114,7 @@
                 const profile = await liff.getProfile();
                 document.getElementById('user-avatar').src = profile.pictureUrl;
                 document.getElementById('user-avatar').classList.remove('hidden');
-            } catch (e) { console.log("LIFF failed or running in browser"); }
+            } catch (e) { console.log("LIFF failed"); }
             fetchData();
         }
 
@@ -138,8 +138,8 @@
             `).join('');
 
             document.getElementById('styles-grid').innerHTML = appData.styles.map(s => `
-                <div class="bg-white overflow-hidden text-center pb-2">
-                    <img src="${s.圖片網址}" class="w-full">
+                <div class="bg-white overflow-hidden text-center pb-2 border border-gray-50">
+                    <img src="${s.圖片網址}" class="w-full aspect-square object-cover">
                     <div class="p-2"><p class="font-bold text-xs truncate text-gray-700">${s.名稱}</p><p class="text-[#8c7662] font-bold text-xs">$${s.價格}</p></div>
                 </div>
             `).join('');
@@ -157,6 +157,7 @@
             renderCalendar();
         }
 
+        // --- 重點修正：恢復顯示具體時段 ---
         function renderCalendar() {
             const grid = document.getElementById('calendar-grid');
             const year = viewDate.getFullYear();
@@ -166,19 +167,31 @@
             const firstDay = new Date(year, month, 1).getDay();
             const lastDate = new Date(year, month + 1, 0).getDate();
             const today = new Date(); today.setHours(0, 0, 0, 0);
+
             for (let j = 0; j < firstDay; j++) grid.innerHTML += `<div></div>`;
+
             for (let i = 1; i <= lastDate; i++) {
                 const dObj = new Date(year, month, i);
                 const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                 const isPast = dObj < today;
                 const match = appData.settings.find(s => s.formattedDate === dStr);
                 const slots = match ? match.availableSlots : [];
+                
                 const dayDiv = document.createElement('div');
                 dayDiv.className = `calendar-day ${isPast ? 'past-day' : (slots.length > 0 ? 'has-slots' : '')} ${dObj.getTime() === today.getTime() ? 'today-mark' : ''}`;
+                
                 let html = `<span class="day-num">${i}</span>`;
-                if (!isPast && slots.length > 0) { html += `<div class="slot-text">可預約</div>`; }
+                if (!isPast) { 
+                    // 這裡改回顯示每個具體時段
+                    slots.forEach(s => { 
+                        html += `<div class="slot-text">${s}</div>`; 
+                    }); 
+                }
                 dayDiv.innerHTML = html;
-                if (slots.length > 0 && !isPast) { dayDiv.onclick = () => openModal(dStr, slots); }
+                
+                if (slots.length > 0 && !isPast) { 
+                    dayDiv.onclick = () => openModal(dStr, slots); 
+                }
                 grid.appendChild(dayDiv);
             }
         }
@@ -208,7 +221,7 @@
             event.preventDefault();
             const btn = document.getElementById('submit-btn');
             btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>提交中...';
+            btn.innerHTML = '提交中...';
             try {
                 let userId = "Unknown", displayName = "Guest";
                 if (liff.isLoggedIn()) {
