@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nail Art Studio | 專業美甲預約</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .active-tab { color: #db2777; border-bottom: 3px solid #db2777; }
+        .calendar-day.full { background-color: #f3f4f6; color: #d1d5db; pointer-events: none; }
+        .calendar-day.today { border: 2px solid #db2777; }
+        .calendar-day.selected { background-color: #db2777; color: white; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .animate-slide-up { animation: slideUp 0.3s ease-out; }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-900 pb-10">
+
+    <header class="bg-white px-5 py-3 shadow-sm flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-2">
+            <div class="w-9 h-9 bg-pink-600 rounded-lg flex items-center justify-center text-white italic font-serif text-xl shadow-md">N</div>
+            <span class="font-bold text-lg tracking-wider text-gray-800">NAIL STUDIO</span>
+        </div>
+        <img id="user-avatar" src="https://via.placeholder.com/40" class="w-10 h-10 rounded-full border-2 border-pink-100 hidden">
+    </header>
+
+    <nav class="bg-white border-b flex text-center font-medium sticky top-[60px] z-40">
+        <button onclick="switchPage('booking')" id="tab-booking" class="flex-1 py-4 active-tab">預約時段</button>
+        <button onclick="switchPage('notices')" id="tab-notices" class="flex-1 py-4 text-gray-500">預約須知</button>
+        <button onclick="switchPage('styles')" id="tab-styles" class="flex-1 py-4 text-gray-500">款式介紹</button>
+    </nav>
+
+    <main class="max-w-md mx-auto p-4">
+
+        <section id="page-booking" class="space-y-4">
+            <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-bold text-lg">選擇日期</h2>
+                    <span id="current-month" class="text-pink-600 font-medium text-sm bg-pink-50 px-3 py-1 rounded-full"></span>
+                </div>
+                <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2 text-gray-400">
+                    <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+                </div>
+                <div id="calendar-grid" class="grid grid-cols-7 gap-1">
+                    </div>
+                <div class="mt-4 flex gap-4 text-xs text-gray-400 justify-center">
+                    <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-pink-500"></span>可預約</div>
+                    <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-gray-200"></span>已約滿/休假</div>
+                </div>
+            </div>
+
+            <div id="time-section" class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 hidden">
+                <h3 class="font-bold mb-3 text-gray-700">可選時段</h3>
+                <div id="time-slots" class="grid grid-cols-3 gap-2">
+                    </div>
+            </div>
+
+            <button onclick="openBookingModal()" id="btn-next" class="w-full bg-pink-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-pink-100 opacity-50 cursor-not-allowed transition-all" disabled>
+                下一步：填寫預約細節
+            </button>
+        </section>
+
+        <section id="page-notices" class="hidden space-y-4">
+            <div id="notices-content" class="space-y-4">
+                </div>
+        </section>
+
+        <section id="page-styles" class="hidden space-y-6">
+            <div class="bg-amber-50 border border-amber-100 p-3 rounded-xl flex items-center gap-2 text-amber-800 text-sm">
+                <i class="fa-solid fa-bullhorn animate-bounce"></i>
+                <marquee id="announcement" behavior="scroll" direction="left">載入中最新優惠訊息...</marquee>
+            </div>
+            <div id="promo-banner" class="w-full h-48 rounded-3xl overflow-hidden shadow-md">
+                <img id="banner-img" src="" class="w-full h-full object-cover">
+            </div>
+            <div id="styles-grid" class="grid grid-cols-2 gap-4">
+                </div>
+        </section>
+
+    </main>
+
+    <div id="booking-modal" class="fixed inset-0 bg-black/60 z-[100] hidden flex items-end">
+        <div class="bg-white w-full rounded-t-[40px] p-8 animate-slide-up">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-gray-800">確認預約細節</h3>
+                <button onclick="closeBookingModal()" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <form id="main-form" class="space-y-5" onsubmit="submitToGas(event)">
+                <div class="bg-pink-50 p-4 rounded-2xl">
+                    <p class="text-sm text-pink-600 font-medium">預約時間</p>
+                    <p id="display-datetime" class="text-lg font-bold text-pink-900"></p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2 ml-1">選擇款式</label>
+                    <select id="form-style" required class="w-full bg-gray-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-pink-500">
+                        </select>
+                </div>
+
+                <div class="flex items-center justify-between bg-gray-50 p-4 rounded-2xl">
+                    <span class="font-bold text-gray-700">是否需要卸甲？</span>
+                    <input type="checkbox" id="form-remove" class="w-6 h-6 accent-pink-600">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2 ml-1">備註事項</label>
+                    <textarea id="form-note" class="w-full bg-gray-50 border-none rounded-2xl p-4" rows="2" placeholder="是否有延甲需求、指甲狀況..."></textarea>
+                </div>
+
+                <button type="submit" id="submit-btn" class="w-full bg-gray-900 text-white py-5 rounded-3xl font-bold text-lg shadow-xl active:scale-95 transition-all">
+                    送出預約並通知美甲師
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const GAS_URL = "YOUR_GAS_WEB_APP_URL"; // 👈 貼上你的 GAS URL
+        const LIFF_ID = "YOUR_LIFF_ID";       // 👈 貼上你的 LIFF ID
+
+        let appData = null;
+        let selectedDate = null;
+        let selectedTime = null;
+
+        async function init() {
+            try {
+                await liff.init({ liffId: LIFF_ID });
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                    return;
+                }
+                const profile = await liff.getProfile();
+                document.getElementById('user-avatar').src = profile.pictureUrl;
+                document.getElementById('user-avatar').classList.remove('hidden');
+                
+                fetchData();
+            } catch (err) { console.error(err); }
+        }
+
+        async function fetchData() {
+            const res = await fetch(`${GAS_URL}?action=getAppData`);
+            appData = await res.json();
+            renderUI();
+        }
+
+        function renderUI() {
+            // 渲染款式列表與下拉選單
+            const grid = document.getElementById('styles-grid');
+            const select = document.getElementById('form-style');
+            grid.innerHTML = appData.styles.map(s => `
+                <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+                    <img src="${s.圖片網址}" class="w-full h-32 object-cover">
+                    <div class="p-3 text-center">
+                        <p class="font-bold text-sm text-gray-800">${s.名稱}</p>
+                        <p class="text-pink-600 font-bold text-xs">$${s.價格}</p>
+                    </div>
+                </div>
+            `).join('');
+            select.innerHTML = appData.styles.map(s => `<option value="${s.名稱}">${s.名稱}</option>`).join('');
+
+            // 渲染預約須知
+            document.getElementById('notices-content').innerHTML = appData.rules.map(r => `
+                <div class="bg-white p-5 rounded-2xl shadow-sm">
+                    <h4 class="font-bold text-pink-600 mb-2"><i class="fa-solid fa-star mr-2"></i>${r.標題}</h4>
+                    <p class="text-sm text-gray-500 leading-relaxed">${r.詳細內容}</p>
+                </div>
+            `).join('');
+
+            // 渲染活動公告
+            const announcement = appData.promos.find(p => p.類型 === '廣播');
+            if(announcement) document.getElementById('announcement').innerText = announcement.內容;
+            const banner = appData.promos.find(p => p.類型 === '輪播圖');
+            if(banner) document.getElementById('banner-img').src = banner.內容;
+
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendar-grid');
+            const now = new Date();
+            document.getElementById('current-month').innerText = `${now.getMonth() + 1}月`;
+            
+            let html = "";
+            // 補空白 (簡單寫法：從今天開始往後14天)
+            for (let i = 0; i < 21; i++) {
+                const date = new Date();
+                date.setDate(now.getDate() + i);
+                const dStr = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+                
+                // 比對試算表預約設定
+                const daySetting = appData.settings.filter(s => s.日期.includes(dStr));
+                const availableCount = daySetting.filter(s => s.狀態 === '可預約').length;
+                const isOff = daySetting.some(s => s.狀態 === '休假');
+
+                const statusClass = (availableCount > 0 && !isOff) ? '' : 'full';
+                const countBadge = (availableCount > 0 && !isOff) ? `<span class="block text-[8px] mt-1 text-pink-500">餘 ${availableCount}</span>` : '';
+
+                html += `
+                    <div onclick="clickDate('${dStr}', this)" class="calendar-day ${statusClass} p-3 rounded-xl border border-transparent cursor-pointer hover:border-pink-200 transition-all">
+                        <span class="text-sm font-medium">${date.getDate()}</span>
+                        ${isOff ? '<span class="block text-[8px] mt-1 text-gray-300">休</span>' : countBadge}
+                    </div>
+                `;
+            }
+            grid.innerHTML = html;
+        }
+
+        function clickDate(dateStr, el) {
+            selectedDate = dateStr;
+            document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
+            el.classList.add('selected');
+
+            const daySetting = appData.settings.filter(s => s.日期.includes(dateStr) && s.狀態 === '可預約');
+            const timeGrid = document.getElementById('time-slots');
+            timeGrid.innerHTML = daySetting.map(s => `
+                <button onclick="clickTime('${s.時段}', this)" class="time-btn border-2 border-pink-100 py-2 rounded-xl text-sm font-bold text-pink-700 hover:bg-pink-50 transition-all">${s.時段}</button>
+            `).join('');
+            
+            document.getElementById('time-section').classList.remove('hidden');
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+
+        function clickTime(time, el) {
+            selectedTime = time;
+            document.querySelectorAll('.time-btn').forEach(b => b.className = 'time-btn border-2 border-pink-100 py-2 rounded-xl text-sm font-bold text-pink-700');
+            el.className = 'time-btn bg-pink-600 text-white py-2 rounded-xl text-sm font-bold shadow-md';
+            
+            const btnNext = document.getElementById('btn-next');
+            btnNext.disabled = false;
+            btnNext.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        function openBookingModal() {
+            document.getElementById('display-datetime').innerText = `${selectedDate} ${selectedTime}`;
+            document.getElementById('booking-modal').classList.remove('hidden');
+        }
+
+        function closeBookingModal() {
+            document.getElementById('booking-modal').classList.add('hidden');
+        }
+
+        async function submitToGas(e) {
+            e.preventDefault();
+            const profile = await liff.getProfile();
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true;
+            btn.innerText = "傳送預約中...";
+
+            const payload = {
+                action: 'submitBooking',
+                userId: profile.userId,
+                name: profile.displayName,
+                date: selectedDate,
+                time: selectedTime,
+                style: document.getElementById('form-style').value,
+                removeNails: document.getElementById('form-remove').checked ? "是" : "否",
+                note: document.getElementById('form-note').value
+            };
+
+            try {
+                await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
+                await liff.sendMessages([{
+                    type: 'text',
+                    text: `💅 收到預約申請囉！\n\n📅 日期：${selectedDate}\n⏰ 時間：${selectedTime}\n✨ 款式：${payload.style}\n\n美甲師正在火速確認中，確認成功會再寄送通知給您～`
+                }]);
+                liff.closeWindow();
+            } catch (err) {
+                alert('預約失敗，請洽詢美甲師');
+                btn.disabled = false;
+                btn.innerText = "重新送出預約";
+            }
+        }
+
+        function switchPage(page) {
+            ['booking', 'notices', 'styles'].forEach(p => {
+                document.getElementById(`page-${p}`).classList.add('hidden');
+                document.getElementById(`tab-${p}`).className = 'flex-1 py-4 text-gray-500';
+            });
+            document.getElementById(`page-${page}`).classList.remove('hidden');
+            document.getElementById(`tab-${page}`).className = 'flex-1 py-4 active-tab font-bold';
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
