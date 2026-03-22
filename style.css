@@ -1,181 +1,269 @@
-/* 引入思源宋體與英文襯線體 */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
+/* style.css */
+/* 引入思源宋體 Noto Serif TC */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&display=swap');
 
 :root {
-    --primary: #8c7662;      /* 品牌大地棕 */
-    --accent: #d9c5b2;       /* 奶茶色 */
-    --bg-soft: #fdfbf9;      /* 暖白底色 */
-    --text-dark: #4a4238;    /* 深褐字體 */
-    --text-gray: #b5ada3;    /* 灰褐字體 */
+    /* 核心色調自定義 - 仿頭像大地色 */
+    --earth-dark: #4a4238;    /* 深褐字體 */
+    --earth-brown: #8c7662;   /* 品牌棕色 - 按鈕、可選日、時段 */
+    --earth-accent: #bdae9c;  /* 灰褐文字 - 禁用日 */
+    --glass-bg: rgba(253, 251, 249, 0.6); /* 透明奶茶色 (用於卡片磨砂底) */
+    --glass-border: rgba(140, 118, 98, 0.1); /* 極細微的棕色邊框 */
     --white: #ffffff;
 }
 
-/* 全域字體設定為思源宋體 */
-body { 
+/* 1. 禁止頁面放大與設定全域字體 */
+html, body {
+    touch-action: manipulation; /* 基礎禁止雙擊縮放，防誤觸 */
     font-family: 'Noto Serif TC', serif; 
-    background-color: var(--bg-soft); 
-    color: var(--text-dark);
+    color: var(--earth-dark);
+    overscroll-behavior: none; /* 防止橡皮筋效果，保持質感 */
+}
+
+/* 2. 網頁漸變雜訊磨砂背景 */
+body { 
+    margin: 0;
+    min-height: 100vh;
+    padding-bottom: 90px;
+    background-color: #fdfbf9; /* 基礎底色 */
+    /* 重疊漸變：奶茶色到柔白 + 網點雜訊 */
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(217, 197, 178, 0.2) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(217, 197, 178, 0.1) 0px, transparent 50%),
+        linear-gradient(135deg, rgba(253, 251, 249, 1) 0%, rgba(255, 255, 255, 1) 100%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%238c7662' fill-opacity='0.03' d='M1 3h1v1H1V3zm2-2h1v1H2V1z'%3E%3C/path%3E%3C/svg%3E");
+    background-attachment: fixed;
+    background-size: cover, cover, cover, auto; /* 背景圖固定 */
     -webkit-tap-highlight-color: transparent; 
 }
 
-/* 跑馬燈：大地色質感 */
-.marquee-container { 
-    background: var(--primary); 
-    color: var(--white); 
-    padding: 8px 0; 
-    letter-spacing: 1px;
+/* 3. 透明磨砂質感卡片 & 公共組件 */
+.glass-effect {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 6px 20px rgba(140, 118, 98, 0.04);
 }
 
-/* Header：簡約高級感 */
+/* 跑馬燈美化 - 深色磨砂 */
+.marquee-container { 
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 60;
+    background: rgba(74, 66, 56, 0.9); /* 深色磨砂 */
+    backdrop-filter: blur(5px);
+    color: var(--white); 
+    padding: 8px 0; 
+    font-size: 13px;
+    letter-spacing: 1px;
+    display: none; /* 預設隱藏，由 JS 控制顯示 */
+}
+
+/* 版頭透明磨砂與簡約排版 */
 header {
-    background: rgba(253, 251, 249, 0.9) !important;
-    border-bottom: 1px solid rgba(140, 118, 98, 0.1) !important;
+    background: rgba(253, 251, 249, 0.4) !important;
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-bottom: 1px solid var(--glass-border) !important;
+    margin-top: 35px; /* 為跑馬燈留空 */
 }
 
 header h1 {
-    font-family: 'Playfair Display', serif;
-    font-style: italic;
-    color: var(--text-dark) !important;
+    font-weight: 700 !important;
+    color: var(--earth-dark) !important;
 }
 
 header p {
-    color: var(--primary) !important;
-    letter-spacing: 0.2em !important;
+    color: var(--earth-brown) !important;
+    letter-spacing: 0.1em !important;
 }
 
-/* 導航標籤：思源宋體搭配簡約底線 */
+/* 導航標籤 */
 .nav-tag { 
-    padding: 10px 15px !important; 
+    padding: 10px 18px !important; 
     font-size: 14px; 
     font-weight: 400; 
     transition: all 0.3s; 
     border: none !important;
     border-bottom: 2px solid transparent !important;
-    color: var(--text-gray) !important; 
+    color: var(--earth-accent) !important; 
     background: transparent !important; 
 }
 
 .nav-tag.active { 
-    color: var(--primary) !important; 
-    border-bottom-color: var(--primary) !important;
+    color: var(--earth-brown) !important; 
+    border-bottom-color: var(--earth-brown) !important;
     font-weight: 700 !important;
 }
 
-/* 月曆卡片：防止跑版優化 */
-.calendar-card { 
-    background: var(--white) !important; 
+/* 月曆與活動卡片磨砂效果 */
+.calendar-card, #promo-list div, #page-notices div { 
+    @extend .glass-effect;
     border-radius: 12px !important; 
-    box-shadow: 0 4px 20px rgba(140, 118, 98, 0.05) !important; 
-    border: 1px solid #f2ede9 !important;
-    padding: 15px 10px !important;
+    padding: 15px !important;
 }
 
-/* 月曆格子 */
+/* 月曆格子與時段 */
 .calendar-day { 
-    min-height: 75px !important; /* 降低高度防止擠壓 */
-    border-radius: 4px !important; 
+    min-height: 80px !important; 
+    border-radius: 6px !important; 
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 4px 0 !important;
+    padding: 5px 0 !important;
+    border: 1px solid transparent;
 }
 
 .day-num { 
-    color: var(--text-dark) !important; 
+    color: var(--earth-dark) !important; 
     font-weight: 700 !important; 
     font-size: 14px;
-    margin-bottom: 2px;
+    margin-bottom: 3px;
 }
 
-/* 時段文字：純文字、無背景、縮小節省空間 */
+/* 時段文字：純文字、無背景 */
 .slot-text { 
-    color: var(--primary) !important; 
-    background: transparent !important; /* 移除背景色 */
+    color: var(--earth-brown) !important; 
+    background: transparent !important; 
     padding: 0 !important;
     margin-top: 1px !important;
     font-weight: 400 !important;
-    font-size: 9px !important; /* 縮小文字 */
+    font-size: 9px !important; 
     line-height: 1.2;
-    transform: scale(0.9); /* 進一步縮小確保不跑版 */
+    transform: scale(0.9);
     font-family: sans-serif; /* 數字使用無襯線字體較清晰 */
+    width: 90%;
+    text-align: center;
 }
 
-/* 可預約日子的底色 */
+/* 可預約日子的底色 - 極淡奶茶色 */
 .has-slots { 
-    background: #fffdfb !important; 
-    border: 1px solid #f8f3f0 !important; 
+    background: rgba(217, 197, 178, 0.08) !important; 
+    border-color: rgba(140, 118, 98, 0.05) !important; 
 }
 
 /* 今天日期的外框 */
 .today-mark { 
-    border: 1px solid var(--primary) !important; 
-    background: #fdf8f4 !important;
+    border: 1px solid var(--earth-brown) !important; 
+    background: rgba(253, 248, 244, 0.4) !important;
 }
 
-/* 過去日期：不可選、變灰色、隱藏時段 */
+/* 過去日期：灰色禁用 */
 .past-day { 
-    opacity: 0.3 !important; 
-    pointer-events: none !important; /* 禁止點擊 */
+    opacity: 0.35 !important; 
+    pointer-events: none !important; 
     background: transparent !important;
     filter: grayscale(1);
 }
 .past-day .slot-text {
-    display: none !important; /* 過去的日子不顯示時段文字 */
+    display: none !important; 
 }
 
-/* 款式介紹：方格感 */
+/* 款式介紹：IG 牆感 */
 #styles-grid > div {
-    border-radius: 4px !important;
-    border: 1px solid #f2ede9 !important;
-    box-shadow: none !important;
+    @extend .glass-effect;
+    border-radius: 0 !important; /* 移除圓角展現高級感 */
+    padding: 0;
+    overflow: hidden;
+    border-color: var(--glass-border) !important;
 }
 
 #styles-grid img {
     aspect-ratio: 1/1;
     object-fit: cover;
+    filter: sepia(10%) contrast(95%);
 }
 
-/* 預約 Modal */
-.modal-up { 
-    background: var(--bg-soft) !important; 
-    border-radius: 24px 24px 0 0 !important; 
+#styles-grid div p { color: var(--earth-dark) !important; }
+#styles-grid div p:last-child { color: var(--earth-brown) !important; }
+
+/* 預約 Modal - 透明磨砂窗 */
+#booking-modal .modal-up { 
+    background: rgba(253, 251, 249, 0.7) !important; 
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 28px 28px 0 0 !important; 
+    border-top: 1px solid var(--glass-border);
 }
 
 #display-date { 
-    background: var(--accent) !important; 
-    color: var(--text-dark) !important;
+    background: rgba(189, 174, 156, 0.4) !important; /* 透明奶茶色 */
+    color: var(--earth-dark) !important;
     border-radius: 8px !important;
     letter-spacing: 1px;
     font-weight: 700;
 }
 
-/* 表單元件字體 */
-select, textarea, button {
+/* 表單元件 */
+select, textarea, input[type="checkbox"] {
     font-family: 'Noto Serif TC', serif !important;
 }
 
+select {
+    appearance: none;
+    background: rgba(255, 255, 255, 0.4) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: 8px !important;
+    padding: 12px 15px !important;
+    font-size: 14px;
+}
+
+textarea {
+    background: rgba(255, 255, 255, 0.3) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: 8px !important;
+    padding: 12px 15px !important;
+}
+
+input[type="checkbox"] {
+    accent-color: var(--earth-brown);
+}
+
 .time-btn {
-    border: 1px solid var(--accent) !important;
-    color: var(--text-dark) !important;
-    background: var(--white) !important;
+    border: 1px solid rgba(189, 174, 156, 0.4) !important;
+    color: var(--earth-dark) !important;
+    background: rgba(255, 255, 255, 0.4) !important;
     border-radius: 8px !important;
     font-size: 12px !important;
 }
 
 .time-btn.active-time {
-    background: var(--primary) !important;
+    background: var(--earth-brown) !important;
     color: var(--white) !important;
-    border-color: var(--primary) !important;
+    border-color: var(--earth-brown) !important;
 }
 
 #submit-btn {
-    background: var(--primary) !important;
+    background: var(--earth-brown) !important;
     border-radius: 8px !important;
     letter-spacing: 2px;
     font-weight: 700;
+    transition: background 0.2s;
 }
 
-/* LINE 按鈕 */
-.line-btn { background: #5a524a !important; }
+#submit-btn:disabled {
+    background: rgba(189, 174, 156, 0.6) !important;
+}
 
+/* LINE 聯絡按鈕 */
+.line-btn { background: rgba(90, 82, 74, 0.7) !important; backdrop-filter: blur(5px); }
+
+/* 公共標籤美化 (用於卡片頂部) */
+.glass-tag {
+    background: rgba(189, 174, 156, 0.3);
+    color: var(--earth-brown);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+/* 防止跑版：全域微調 */
+.max-w-md { max-width: 480px; }
+.calendar-grid { display: grid; grid-template-cols: repeat(7, 1fr); gap: 2px; width: 100%; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
