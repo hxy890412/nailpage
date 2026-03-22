@@ -11,7 +11,7 @@
         .active-tab { color: #db2777; border-bottom: 3px solid #db2777; }
         .calendar-day.full { background-color: #f3f4f6; color: #d1d5db; pointer-events: none; }
         .calendar-day.today { border: 2px solid #db2777; }
-        .calendar-day.selected { background-color: #db2777; color: white; }
+        .calendar-day.selected { background-color: #db2777; color: white; border-color: #db2777; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .animate-slide-up { animation: slideUp 0.3s ease-out; }
     </style>
@@ -23,7 +23,7 @@
             <div class="w-9 h-9 bg-pink-600 rounded-lg flex items-center justify-center text-white italic font-serif text-xl shadow-md">N</div>
             <span class="font-bold text-lg tracking-wider text-gray-800">NAIL STUDIO</span>
         </div>
-        <img id="user-avatar" src="https://via.placeholder.com/40" class="w-10 h-10 rounded-full border-2 border-pink-100 hidden">
+        <img id="user-avatar" src="" class="w-10 h-10 rounded-full border-2 border-pink-100 hidden">
     </header>
 
     <nav class="bg-white border-b flex text-center font-medium sticky top-[60px] z-40">
@@ -33,7 +33,6 @@
     </nav>
 
     <main class="max-w-md mx-auto p-4">
-
         <section id="page-booking" class="space-y-4">
             <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
                 <div class="flex justify-between items-center mb-4">
@@ -43,8 +42,7 @@
                 <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2 text-gray-400">
                     <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
                 </div>
-                <div id="calendar-grid" class="grid grid-cols-7 gap-1">
-                    </div>
+                <div id="calendar-grid" class="grid grid-cols-7 gap-1"></div>
                 <div class="mt-4 flex gap-4 text-xs text-gray-400 justify-center">
                     <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-pink-500"></span>可預約</div>
                     <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-gray-200"></span>已約滿/休假</div>
@@ -53,8 +51,7 @@
 
             <div id="time-section" class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 hidden">
                 <h3 class="font-bold mb-3 text-gray-700">可選時段</h3>
-                <div id="time-slots" class="grid grid-cols-3 gap-2">
-                    </div>
+                <div id="time-slots" class="grid grid-cols-3 gap-2"></div>
             </div>
 
             <button onclick="openBookingModal()" id="btn-next" class="w-full bg-pink-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-pink-100 opacity-50 cursor-not-allowed transition-all" disabled>
@@ -63,8 +60,7 @@
         </section>
 
         <section id="page-notices" class="hidden space-y-4">
-            <div id="notices-content" class="space-y-4">
-                </div>
+            <div id="notices-content" class="space-y-4"></div>
         </section>
 
         <section id="page-styles" class="hidden space-y-6">
@@ -75,10 +71,8 @@
             <div id="promo-banner" class="w-full h-48 rounded-3xl overflow-hidden shadow-md">
                 <img id="banner-img" src="" class="w-full h-full object-cover">
             </div>
-            <div id="styles-grid" class="grid grid-cols-2 gap-4">
-                </div>
+            <div id="styles-grid" class="grid grid-cols-2 gap-4"></div>
         </section>
-
     </main>
 
     <div id="booking-modal" class="fixed inset-0 bg-black/60 z-[100] hidden flex items-end">
@@ -96,8 +90,7 @@
                 
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-2 ml-1">選擇款式</label>
-                    <select id="form-style" required class="w-full bg-gray-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-pink-500">
-                        </select>
+                    <select id="form-style" required class="w-full bg-gray-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-pink-500"></select>
                 </div>
 
                 <div class="flex items-center justify-between bg-gray-50 p-4 rounded-2xl">
@@ -118,8 +111,8 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzDuTyYtyCZGFJzrdxaGVzOZZ5kw9bB21MtFnVr38yiDTjVwU5dQYV1b_xEsFssrm18/exec"; // 👈 貼上你的 GAS URL
-        const LIFF_ID = "2009547519-PsSaE7hv";       // 👈 貼上你的 LIFF ID
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbx2L-RAYquDcsV1Bk5M2DR4UmIKWLctWZ8EhOpg9ymjGk7UGyKMoA2OcxOox5qks4w7/exec";
+        const LIFF_ID = "2009547519-PsSaE7hv";
 
         let appData = null;
         let selectedDate = null;
@@ -133,21 +126,24 @@
                     return;
                 }
                 const profile = await liff.getProfile();
-                document.getElementById('user-avatar').src = profile.pictureUrl;
-                document.getElementById('user-avatar').classList.remove('hidden');
-                
+                if (profile.pictureUrl) {
+                    document.getElementById('user-avatar').src = profile.pictureUrl;
+                    document.getElementById('user-avatar').classList.remove('hidden');
+                }
                 fetchData();
-            } catch (err) { console.error(err); }
+            } catch (err) { console.error('LIFF Init Error:', err); }
         }
 
         async function fetchData() {
-            const res = await fetch(`${GAS_URL}?action=getAppData`);
-            appData = await res.json();
-            renderUI();
+            try {
+                const res = await fetch(`${GAS_URL}?action=getAppData`);
+                appData = await res.json();
+                renderUI();
+            } catch (err) { console.error('Fetch Data Error:', err); }
         }
 
         function renderUI() {
-            // 渲染款式列表與下拉選單
+            // 渲染款式
             const grid = document.getElementById('styles-grid');
             const select = document.getElementById('form-style');
             grid.innerHTML = appData.styles.map(s => `
@@ -161,7 +157,7 @@
             `).join('');
             select.innerHTML = appData.styles.map(s => `<option value="${s.名稱}">${s.名稱}</option>`).join('');
 
-            // 渲染預約須知
+            // 渲染須知
             document.getElementById('notices-content').innerHTML = appData.rules.map(r => `
                 <div class="bg-white p-5 rounded-2xl shadow-sm">
                     <h4 class="font-bold text-pink-600 mb-2"><i class="fa-solid fa-star mr-2"></i>${r.標題}</h4>
@@ -169,7 +165,7 @@
                 </div>
             `).join('');
 
-            // 渲染活動公告
+            // 公告與 Banner
             const announcement = appData.promos.find(p => p.類型 === '廣播');
             if(announcement) document.getElementById('announcement').innerText = announcement.內容;
             const banner = appData.promos.find(p => p.類型 === '輪播圖');
@@ -184,24 +180,23 @@
             document.getElementById('current-month').innerText = `${now.getMonth() + 1}月`;
             
             let html = "";
-            // 補空白 (簡單寫法：從今天開始往後14天)
             for (let i = 0; i < 21; i++) {
                 const date = new Date();
                 date.setDate(now.getDate() + i);
+                // 格式化為 YYYY-MM-DD 以匹配 GAS 的 formattedDate
                 const dStr = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
                 
-                // 比對試算表預約設定
-                const daySetting = appData.settings.filter(s => s.日期.includes(dStr));
-                const availableCount = daySetting.filter(s => s.狀態 === '可預約').length;
-                const isOff = daySetting.some(s => s.狀態 === '休假');
+                // 使用新結構：找尋對應日期的設定
+                const dayConfig = appData.settings.find(s => s.formattedDate === dStr);
+                const availableCount = dayConfig ? dayConfig.availableSlots.length : 0;
 
-                const statusClass = (availableCount > 0 && !isOff) ? '' : 'full';
-                const countBadge = (availableCount > 0 && !isOff) ? `<span class="block text-[8px] mt-1 text-pink-500">餘 ${availableCount}</span>` : '';
+                const statusClass = (availableCount > 0) ? '' : 'full';
+                const countBadge = (availableCount > 0) ? `<span class="block text-[8px] mt-1 text-pink-500 font-bold">餘 ${availableCount}</span>` : '<span class="block text-[8px] mt-1 text-gray-300">滿/休</span>';
 
                 html += `
-                    <div onclick="clickDate('${dStr}', this)" class="calendar-day ${statusClass} p-3 rounded-xl border border-transparent cursor-pointer hover:border-pink-200 transition-all">
+                    <div onclick="clickDate('${dStr}', this)" class="calendar-day ${statusClass} p-3 rounded-xl border-2 border-transparent cursor-pointer transition-all hover:bg-pink-50">
                         <span class="text-sm font-medium">${date.getDate()}</span>
-                        ${isOff ? '<span class="block text-[8px] mt-1 text-gray-300">休</span>' : countBadge}
+                        ${countBadge}
                     </div>
                 `;
             }
@@ -213,20 +208,31 @@
             document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
             el.classList.add('selected');
 
-            const daySetting = appData.settings.filter(s => s.日期.includes(dateStr) && s.狀態 === '可預約');
+            // 找尋該日期的 availableSlots
+            const dayConfig = appData.settings.find(s => s.formattedDate === dateStr);
             const timeGrid = document.getElementById('time-slots');
-            timeGrid.innerHTML = daySetting.map(s => `
-                <button onclick="clickTime('${s.時段}', this)" class="time-btn border-2 border-pink-100 py-2 rounded-xl text-sm font-bold text-pink-700 hover:bg-pink-50 transition-all">${s.時段}</button>
-            `).join('');
             
-            document.getElementById('time-section').classList.remove('hidden');
+            if (dayConfig && dayConfig.availableSlots.length > 0) {
+                timeGrid.innerHTML = dayConfig.availableSlots.map(slot => `
+                    <button onclick="clickTime('${slot}', this)" class="time-btn border-2 border-pink-100 py-2 rounded-xl text-sm font-bold text-pink-700 hover:bg-pink-50 transition-all">${slot}</button>
+                `).join('');
+                document.getElementById('time-section').classList.remove('hidden');
+            } else {
+                timeGrid.innerHTML = "";
+                document.getElementById('time-section').classList.add('hidden');
+            }
+            
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         }
 
         function clickTime(time, el) {
             selectedTime = time;
-            document.querySelectorAll('.time-btn').forEach(b => b.className = 'time-btn border-2 border-pink-100 py-2 rounded-xl text-sm font-bold text-pink-700');
-            el.className = 'time-btn bg-pink-600 text-white py-2 rounded-xl text-sm font-bold shadow-md';
+            document.querySelectorAll('.time-btn').forEach(b => {
+                b.classList.remove('bg-pink-600', 'text-white');
+                b.classList.add('text-pink-700');
+            });
+            el.classList.remove('text-pink-700');
+            el.classList.add('bg-pink-600', 'text-white');
             
             const btnNext = document.getElementById('btn-next');
             btnNext.disabled = false;
@@ -244,29 +250,31 @@
 
         async function submitToGas(e) {
             e.preventDefault();
-            const profile = await liff.getProfile();
             const btn = document.getElementById('submit-btn');
             btn.disabled = true;
             btn.innerText = "傳送預約中...";
 
-            const payload = {
-                action: 'submitBooking',
-                userId: profile.userId,
-                name: profile.displayName,
-                date: selectedDate,
-                time: selectedTime,
-                style: document.getElementById('form-style').value,
-                removeNails: document.getElementById('form-remove').checked ? "是" : "否",
-                note: document.getElementById('form-note').value
-            };
-
             try {
-                await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
-                await liff.sendMessages([{
-                    type: 'text',
-                    text: `💅 收到預約申請囉！\n\n📅 日期：${selectedDate}\n⏰ 時間：${selectedTime}\n✨ 款式：${payload.style}\n\n美甲師正在火速確認中，確認成功會再寄送通知給您～`
-                }]);
-                liff.closeWindow();
+                const profile = await liff.getProfile();
+                const payload = {
+                    action: 'submitBooking',
+                    userId: profile.userId,
+                    name: profile.displayName,
+                    date: selectedDate,
+                    time: selectedTime,
+                    style: document.getElementById('form-style').value,
+                    removeNails: document.getElementById('form-remove').checked ? "是" : "否",
+                    note: document.getElementById('form-note').value
+                };
+
+                const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
+                if (res.ok) {
+                    await liff.sendMessages([{
+                        type: 'text',
+                        text: `💅 收到預約申請囉！\n\n📅 日期：${selectedDate}\n⏰ 時間：${selectedTime}\n✨ 款式：${payload.style}\n\n美甲師正在火速確認中，確認成功會再寄送通知給您～`
+                    }]);
+                    liff.closeWindow();
+                }
             } catch (err) {
                 alert('預約失敗，請洽詢美甲師');
                 btn.disabled = false;
