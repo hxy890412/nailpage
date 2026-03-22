@@ -1,23 +1,24 @@
-/* 引入字體 */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
+/* 引入思源宋體與英文襯線體 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
 
 :root {
     --primary: #8c7662;      /* 品牌大地棕 */
     --accent: #d9c5b2;       /* 奶茶色 */
     --bg-soft: #fdfbf9;      /* 暖白底色 */
     --text-dark: #4a4238;    /* 深褐字體 */
-    --text-gray: #968d81;    /* 灰褐字體 */
+    --text-gray: #b5ada3;    /* 灰褐字體 */
     --white: #ffffff;
 }
 
+/* 全域字體設定為思源宋體 */
 body { 
-    font-family: 'Noto Sans TC', sans-serif; 
+    font-family: 'Noto Serif TC', serif; 
     background-color: var(--bg-soft); 
     color: var(--text-dark);
     -webkit-tap-highlight-color: transparent; 
 }
 
-/* 跑馬燈美化 */
+/* 跑馬燈：大地色質感 */
 .marquee-container { 
     background: var(--primary); 
     color: var(--white); 
@@ -25,7 +26,7 @@ body {
     letter-spacing: 1px;
 }
 
-/* Header 品牌感 */
+/* Header：簡約高級感 */
 header {
     background: rgba(253, 251, 249, 0.9) !important;
     border-bottom: 1px solid rgba(140, 118, 98, 0.1) !important;
@@ -38,59 +39,93 @@ header h1 {
 }
 
 header p {
-    color: var(--text-gray) !important;
+    color: var(--primary) !important;
     letter-spacing: 0.2em !important;
 }
 
-/* 導航標籤：改為簡約優雅風 */
+/* 導航標籤：思源宋體搭配簡約底線 */
 .nav-tag { 
-    padding: 10px 20px !important; 
-    border-radius: 8px !important; 
+    padding: 10px 15px !important; 
     font-size: 14px; 
-    font-weight: 500; 
+    font-weight: 400; 
     transition: all 0.3s; 
-    border: 1px solid transparent !important;
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
     color: var(--text-gray) !important; 
     background: transparent !important; 
 }
 
 .nav-tag.active { 
-    background: var(--white) !important; 
     color: var(--primary) !important; 
-    border-color: var(--accent) !important;
-    box-shadow: 0 4px 12px rgba(140, 118, 98, 0.08) !important;
-}
-
-/* 月曆卡片：雜誌排版感 */
-.calendar-card { 
-    background: var(--white) !important; 
-    border-radius: 16px !important; 
-    box-shadow: 0 10px 30px rgba(140, 118, 98, 0.05) !important; 
-    border: 1px solid #f2ede9 !important;
-}
-
-.calendar-day { 
-    min-height: 85px !important; 
-    border-radius: 8px !important; 
-}
-
-.day-num { color: var(--text-dark) !important; font-weight: 500 !important; }
-
-.has-slots { background: #fcf9f6 !important; border-color: #f2ede9 !important; }
-
-.slot-text { 
-    color: var(--primary) !important; 
-    background: var(--accent);
-    padding: 2px 4px;
-    border-radius: 4px;
+    border-bottom-color: var(--primary) !important;
     font-weight: 700 !important;
 }
 
-.today-mark { border: 2px solid var(--primary) !important; }
+/* 月曆卡片：防止跑版優化 */
+.calendar-card { 
+    background: var(--white) !important; 
+    border-radius: 12px !important; 
+    box-shadow: 0 4px 20px rgba(140, 118, 98, 0.05) !important; 
+    border: 1px solid #f2ede9 !important;
+    padding: 15px 10px !important;
+}
 
-/* 款式介紹：IG 牆方格感 */
+/* 月曆格子 */
+.calendar-day { 
+    min-height: 75px !important; /* 降低高度防止擠壓 */
+    border-radius: 4px !important; 
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 4px 0 !important;
+}
+
+.day-num { 
+    color: var(--text-dark) !important; 
+    font-weight: 700 !important; 
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+/* 時段文字：純文字、無背景、縮小節省空間 */
+.slot-text { 
+    color: var(--primary) !important; 
+    background: transparent !important; /* 移除背景色 */
+    padding: 0 !important;
+    margin-top: 1px !important;
+    font-weight: 400 !important;
+    font-size: 9px !important; /* 縮小文字 */
+    line-height: 1.2;
+    transform: scale(0.9); /* 進一步縮小確保不跑版 */
+    font-family: sans-serif; /* 數字使用無襯線字體較清晰 */
+}
+
+/* 可預約日子的底色 */
+.has-slots { 
+    background: #fffdfb !important; 
+    border: 1px solid #f8f3f0 !important; 
+}
+
+/* 今天日期的外框 */
+.today-mark { 
+    border: 1px solid var(--primary) !important; 
+    background: #fdf8f4 !important;
+}
+
+/* 過去日期：不可選、變灰色、隱藏時段 */
+.past-day { 
+    opacity: 0.3 !important; 
+    pointer-events: none !important; /* 禁止點擊 */
+    background: transparent !important;
+    filter: grayscale(1);
+}
+.past-day .slot-text {
+    display: none !important; /* 過去的日子不顯示時段文字 */
+}
+
+/* 款式介紹：方格感 */
 #styles-grid > div {
-    border-radius: 0 !important; /* 移除圓角展現高級感 */
+    border-radius: 4px !important;
     border: 1px solid #f2ede9 !important;
     box-shadow: none !important;
 }
@@ -98,22 +133,25 @@ header p {
 #styles-grid img {
     aspect-ratio: 1/1;
     object-fit: cover;
-    filter: sepia(10%) contrast(95%);
 }
-
-#styles-grid .text-pink-600 { color: var(--primary) !important; }
 
 /* 預約 Modal */
 .modal-up { 
     background: var(--bg-soft) !important; 
-    border-radius: 32px 32px 0 0 !important; 
+    border-radius: 24px 24px 0 0 !important; 
 }
 
 #display-date { 
     background: var(--accent) !important; 
     color: var(--text-dark) !important;
-    border-radius: 12px !important;
+    border-radius: 8px !important;
     letter-spacing: 1px;
+    font-weight: 700;
+}
+
+/* 表單元件字體 */
+select, textarea, button {
+    font-family: 'Noto Serif TC', serif !important;
 }
 
 .time-btn {
@@ -121,9 +159,9 @@ header p {
     color: var(--text-dark) !important;
     background: var(--white) !important;
     border-radius: 8px !important;
+    font-size: 12px !important;
 }
 
-/* 當時間被選中時的樣式 (需配合 JS 修改) */
 .time-btn.active-time {
     background: var(--primary) !important;
     color: var(--white) !important;
@@ -132,11 +170,12 @@ header p {
 
 #submit-btn {
     background: var(--primary) !important;
-    border-radius: 12px !important;
+    border-radius: 8px !important;
     letter-spacing: 2px;
+    font-weight: 700;
 }
 
-/* LINE 按鈕：改為質感灰褐 */
+/* LINE 按鈕 */
 .line-btn { background: #5a524a !important; }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
