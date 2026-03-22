@@ -9,7 +9,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .active-tab { color: #db2777; border-bottom: 3px solid #db2777; font-weight: bold; }
-        .calendar-day.full { background-color: #f9fafb; color: #d1d5db; pointer-events: none; }
+        /* 滿/休/空白格的樣式 */
+        .calendar-day.full, .calendar-day.empty { background-color: #f9fafb; color: #d1d5db; pointer-events: none; }
         .calendar-day.selected { background-color: #db2777 !important; color: white !important; border-radius: 1rem; shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .animate-slide-up { animation: slideUp 0.3s ease-out; }
@@ -63,8 +64,11 @@
                 <i class="fa-solid fa-bullhorn animate-bounce"></i>
                 <marquee id="announcement" behavior="scroll" direction="left">歡迎光臨！最新優惠活動載入中...</marquee>
             </div>
-            <div id="promo-banner" class="w-full h-44 rounded-3xl overflow-hidden shadow-sm bg-pink-50">
+            <div id="promo-banner" class="w-full h-44 rounded-3xl overflow-hidden shadow-sm bg-pink-50 relative">
                 <img id="banner-img" src="" class="w-full h-full object-cover hidden">
+                <div id="banner-placeholder" class="absolute inset-0 flex items-center justify-center text-pink-200">
+                    <i class="fa-regular fa-image text-4xl"></i>
+                </div>
             </div>
             <div id="styles-grid" class="grid grid-cols-2 gap-4"></div>
         </section>
@@ -104,7 +108,27 @@
         let selectedDate = null;
         let selectedTime = null;
 
-        // 標準化日期格式函數 (解決 YYYY-MM-DD 與 YYYY/M/D 的差異)
+        // --- 核心修正函數：標準化時間顯示 (只顯示 HH:mm) ---
+        function normalizeTime(timeStr) {
+            if (!timeStr) return '';
+            
+            // 如果 GAS 傳來的是 Date 物件字串 (如截圖)，嘗試解析它
+            if (timeStr.includes('GMT') || timeStr.includes('台北標準時間')) {
+                try {
+                    const dateObj = new Date(timeStr);
+                    if (!isNaN(dateObj.getTime())) {
+                        const h = String(dateObj.getHours()).padStart(2, '0');
+                        const m = String(dateObj.getMinutes()).padStart(2, '0');
+                        return `${h}:${m}`;
+                    }
+                } catch (e) { console.error('Time Parse Error:', e); }
+            }
+            
+            // 如果原本就是 HH:mm (例如 10:00)，只取前五碼
+            const timeMatch = timeStr.match(/\d{1,2}:\d{2}/);
+            return timeMatch ? timeMatch[0] : timeStr;
+        }
+
         function normalizeDate(dateStr) {
             const d = new Date(dateStr);
             if (isNaN(d.getTime())) return dateStr;
@@ -158,10 +182,10 @@
             const grid = document.getElementById('styles-grid');
             const select = document.getElementById('form-style');
             grid.innerHTML = appData.styles.map(s => `
-                <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+                <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:border-pink-100 transition-all">
                     <img src="${s.圖片網址}" class="w-full h-32 object-cover">
                     <div class="p-3 text-center">
-                        <p class="font-bold text-xs text-gray-700">${s.名稱}</p>
+                        <p class="font-bold text-xs text-gray-700 truncate">${s.名稱}</p>
                         <p class="text-pink-600 font-bold text-[10px] mt-1">$${s.價格}</p>
                     </div>
                 </div>
@@ -179,25 +203,58 @@
             renderCalendar();
         }
 
+        // --- 核心修正：日曆從 3/1 開始生成整個月 ---
         function renderCalendar() {
             const grid = document.getElementById('calendar-grid');
             const now = new Date();
-            document.getElementById('current-month').innerText = `${now.getMonth() + 1}月`;
+            const year = now.getFullYear();
+            const month = now.getMonth(); // 0-11
+
+            document.getElementById('current-month').innerText = `${month + 1}月`;
             
+            // 抓取當月第一天與最後一天
+            const firstDayOfMonth = new Date(year, month, 1);
+            const lastDayOfMonth = new Date(year, month + 1, 0);
+            
+            // 抓取第一天是週幾 (0-6, 週日為0)
+            const startDayOfWeek = firstDayOfMonth.getDay(); 
+            const totalDaysInMonth = lastDayOfMonth.getDate();
+
             let html = "";
-            for (let i = 0; i < 21; i++) {
-                const date = new Date();
-                date.setDate(now.getDate() + i);
-                const dStr = normalizeDate(date); // 產生標準 YYYY-MM-DD
+            
+            // 1. 補上月份開頭的空白格 (週日開始排序)
+            for (let j = 0; j < startDayOfWeek; j++) {
+                html += `<div class="calendar-day empty p-3 rounded-xl"></div>`;
+            }
+
+            // 2. 生成當月每一天
+            for (let i = 1; i <= totalDaysInMonth; i++) {
+                const date = new Date(year, month, i);
+                const dStr = normalizeDate(date); // 標準 YYYY-MM-DD 比對用
+
+                // 過濾掉過去的日期 (今天以前不能預約)
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const isPast = date < today;
 
                 const config = appData.settings.find(s => s.formattedDate === dStr);
                 const count = config ? config.availableSlots.length : 0;
+                
+                // 狀態判斷：過去、沒開、開了但沒人、亮亮
+                const isOff = !config || isPast; 
                 const isFull = count === 0;
 
+                const statusClass = (isOff || isFull) ? 'full' : '';
+                
+                // 角標提示：滿、休、餘X
+                let badge = '<span class="text-gray-300">滿</span>';
+                if(isPast || isOff) badge = '<span class="text-gray-200">無</span>';
+                else if(!isFull) badge = `<span class="text-pink-500 font-bold">餘${count}</span>`;
+
                 html += `
-                    <div onclick="clickDate('${dStr}', this)" class="calendar-day ${isFull ? 'full' : ''} p-3 rounded-xl border-2 border-transparent cursor-pointer transition-all flex flex-col items-center">
-                        <span class="text-sm font-bold">${date.getDate()}</span>
-                        <span class="text-[9px] mt-1 ${isFull ? 'text-gray-300' : 'text-pink-500'} font-bold">${isFull ? '滿' : '餘'+count}</span>
+                    <div onclick="clickDate('${dStr}', this)" class="calendar-day ${statusClass} p-3 rounded-xl border-2 border-transparent cursor-pointer transition-all flex flex-col items-center">
+                        <span class="text-sm font-bold ${isPast ? 'text-gray-300' : ''}">${i}</span>
+                        <span class="text-[9px] mt-1 font-bold">${badge}</span>
                     </div>
                 `;
             }
@@ -205,6 +262,9 @@
         }
 
         function clickDate(dateStr, el) {
+            // 如果點到不能預約的，就沒反應
+            if (el.classList.contains('full') || el.classList.contains('empty')) return;
+
             selectedDate = dateStr;
             document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
             el.classList.add('selected');
@@ -213,9 +273,11 @@
             const timeGrid = document.getElementById('time-slots');
 
             if (config && config.availableSlots.length > 0) {
-                timeGrid.innerHTML = config.availableSlots.map(t => `
-                    <button onclick="clickTime('${t}', this)" class="time-btn border border-pink-100 py-3 rounded-xl text-sm font-bold text-pink-700 bg-white transition-all shadow-sm">${t}</button>
-                `).join('');
+                timeGrid.innerHTML = config.availableSlots.map(t => {
+                    // --- 核心修正：顯示前先標準化時間 ---
+                    const normalizedTime = normalizeTime(t);
+                    return `<button onclick="clickTime('${normalizedTime}', this)" class="time-btn border border-pink-100 py-3 rounded-xl text-sm font-bold text-pink-700 bg-white transition-all shadow-sm active:scale-95">${normalizedTime}</button>`;
+                }).join('');
                 document.getElementById('time-section').classList.remove('hidden');
             } else {
                 document.getElementById('time-section').classList.add('hidden');
@@ -226,7 +288,7 @@
         function clickTime(time, el) {
             selectedTime = time;
             document.querySelectorAll('.time-btn').forEach(b => {
-                b.className = 'time-btn border border-pink-100 py-3 rounded-xl text-sm font-bold text-pink-700 bg-white transition-all shadow-sm';
+                b.className = 'time-btn border border-pink-100 py-3 rounded-xl text-sm font-bold text-pink-700 bg-white transition-all shadow-sm active:scale-95';
             });
             el.className = 'time-btn bg-pink-600 text-white py-3 rounded-xl text-sm font-bold shadow-md';
             const btnNext = document.getElementById('btn-next');
