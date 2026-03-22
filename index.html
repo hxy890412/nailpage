@@ -18,7 +18,7 @@
         .nav-tag { padding: 8px 18px; border-radius: 50px; font-size: 14px; font-weight: 500; transition: all 0.3s; border: 1px solid #fce7f3; color: #9d174d; background: white; white-space: nowrap; }
         .nav-tag.active { background: #be185d; color: white; border-color: #be185d; box-shadow: 0 4px 10px rgba(190, 24, 93, 0.15); }
         .calendar-card { background: white; border-radius: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.02); border: 1px solid #fce7f3; padding: 15px; }
-        .calendar-day { min-height: 90px; border-radius: 12px; border: 1px solid transparent; display: flex; flex-direction: column; align-items: center; padding: 6px 2px; }
+        .calendar-day { min-height: 90px; border-radius: 12px; border: 1px solid transparent; display: flex; flex-direction: column; align-items: center; padding: 6px 2px; transition: all 0.2s; }
         .day-num { font-size: 14px; font-weight: 600; color: #374151; }
         .slot-text { font-size: 10px; color: #be185d; margin-top: 1px; font-weight: 600; transform: scale(0.9); pointer-events: none; }
         .has-slots { cursor: pointer; background: #fffcfd; border-color: #fff1f2; }
@@ -120,8 +120,10 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyJ0aJ1emestPxsiqlzdcK2x4ilkUAoshkV_bhHkGMCRuFoMrbSEIzCT9s-5_GNPQBE/exec"; 
+        // 1. 這裡請更換為您部署後的最新 GAS 網址
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxOk3GWMPKXbGERONh-tbXrI9sQGZWLceWsjJWpzZbZjCo6TT4S8ldSA_XkqHgBJqVr/exec"; 
         const LIFF_ID = "2009547519-PsSaE7hv";
+        
         let appData = { settings: [], styles: [], rules: [], promos: [] };
         let viewDate = new Date();
         let selDate, selTime;
@@ -129,11 +131,14 @@
         async function init() {
             try {
                 await liff.init({ liffId: LIFF_ID });
-                if (!liff.isLoggedIn()) liff.login();
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                    return;
+                }
                 const profile = await liff.getProfile();
                 document.getElementById('user-avatar').src = profile.pictureUrl;
                 document.getElementById('user-avatar').classList.remove('hidden');
-            } catch (e) { console.log("LIFF failed"); }
+            } catch (e) { console.log("LIFF failed or running in browser"); }
             fetchData();
         }
 
@@ -142,13 +147,15 @@
                 const res = await fetch(`${GAS_URL}?action=getAppData`);
                 appData = await res.json();
                 renderUI();
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("Fetch Data Error:", e); }
         }
 
         function renderUI() {
+            // 跑馬燈
             const marqueeText = appData.promos.map(p => `📢 ${p.類型}: ${p.內容}`).join(' ｜ ');
             document.getElementById('marquee-text').innerText = marqueeText || "✨ 歡迎光臨美甲工作室 ✨";
 
+            // 公告列表
             document.getElementById('promo-list').innerHTML = appData.promos.map(p => `
                 <div class="bg-white p-6 rounded-3xl shadow-sm border-l-4 border-pink-500">
                     <span class="bg-pink-100 text-pink-600 text-[10px] px-2 py-1 rounded-full font-bold uppercase">${p.類型}</span>
@@ -156,15 +163,19 @@
                 </div>
             `).join('');
 
+            // 款式介紹
             document.getElementById('styles-grid').innerHTML = appData.styles.map(s => `
                 <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-pink-50 text-center pb-2">
                     <img src="${s.圖片網址}" class="w-full h-32 object-cover">
                     <div class="p-2"><p class="font-bold text-xs truncate">${s.名稱}</p><p class="text-pink-600 font-bold text-xs">$${s.價格}</p></div>
                 </div>
             `).join('');
+            
+            // 款式下拉選單
             document.getElementById('form-style').innerHTML = '<option value="" disabled selected>請選擇款式</option>' + 
                 appData.styles.map(s => `<option value="${s.名稱}">${s.名稱}</option>`).join('');
 
+            // 預約須知
             document.getElementById('page-notices').innerHTML = appData.rules.map(r => `
                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-pink-50">
                     <h4 class="font-bold text-pink-700 mb-2 flex items-center gap-2"><i class="fa-solid fa-star text-[10px]"></i>${r.標題}</h4>
@@ -181,23 +192,33 @@
             const month = viewDate.getMonth();
             document.getElementById('current-month').innerText = `${year}年 ${month + 1}月`;
             grid.innerHTML = "";
+            
             const firstDay = new Date(year, month, 1).getDay();
             const lastDate = new Date(year, month + 1, 0).getDate();
             const today = new Date(); today.setHours(0, 0, 0, 0);
 
             for (let j = 0; j < firstDay; j++) grid.innerHTML += `<div></div>`;
+            
             for (let i = 1; i <= lastDate; i++) {
                 const dObj = new Date(year, month, i);
                 const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                 const isPast = dObj < today;
+                
                 const match = appData.settings.find(s => s.formattedDate === dStr);
                 const slots = match ? match.availableSlots : [];
+                
                 const dayDiv = document.createElement('div');
                 dayDiv.className = `calendar-day ${isPast ? 'past-day' : (slots.length > 0 ? 'has-slots' : '')} ${dObj.getTime() === today.getTime() ? 'today-mark' : ''}`;
+                
                 let html = `<span class="day-num">${i}</span>`;
-                if (!isPast) { slots.forEach(s => { html += `<div class="slot-text">${s}</div>`; }); }
+                if (!isPast) { 
+                    slots.forEach(s => { html += `<div class="slot-text">${s}</div>`; }); 
+                }
                 dayDiv.innerHTML = html;
-                if (slots.length > 0 && !isPast) { dayDiv.onclick = () => openModal(dStr, slots); }
+                
+                if (slots.length > 0 && !isPast) { 
+                    dayDiv.onclick = () => openModal(dStr, slots); 
+                }
                 grid.appendChild(dayDiv);
             }
         }
@@ -205,16 +226,22 @@
         function openModal(dStr, slots) {
             selDate = dStr; selTime = null;
             document.getElementById('display-date').innerText = `預約日期：${dStr}`;
-            document.getElementById('time-options').innerHTML = slots.map(t => `<button type="button" onclick="selectTime('${t}', this)" class="time-btn py-4 rounded-2xl border border-gray-100 text-gray-700 font-bold bg-gray-50 text-sm">${t}</button>`).join('');
+            document.getElementById('time-options').innerHTML = slots.map(t => `
+                <button type="button" onclick="selectTime('${t}', this)" class="time-btn py-4 rounded-2xl border border-gray-100 text-gray-700 font-bold bg-gray-50 text-sm">${t}</button>
+            `).join('');
             document.getElementById('booking-modal').classList.remove('hidden');
             document.getElementById('submit-btn').disabled = true;
+            document.getElementById('submit-btn').classList.add('opacity-30');
         }
 
         function selectTime(t, el) {
             selTime = t;
-            document.querySelectorAll('.time-btn').forEach(b => b.className = "time-btn py-4 rounded-2xl border border-gray-100 text-gray-700 font-bold bg-gray-50 text-sm");
+            document.querySelectorAll('.time-btn').forEach(b => {
+                b.className = "time-btn py-4 rounded-2xl border border-gray-100 text-gray-700 font-bold bg-gray-50 text-sm";
+            });
             el.className = "time-btn py-4 rounded-2xl border border-pink-500 text-white font-bold bg-pink-500 shadow-md text-sm";
             document.getElementById('submit-btn').disabled = false;
+            document.getElementById('submit-btn').classList.remove('opacity-30');
         }
 
         function closeModal() { document.getElementById('booking-modal').classList.add('hidden'); }
@@ -226,11 +253,17 @@
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>提交中...';
 
             try {
-                const profile = await liff.getProfile();
+                let userId = "Unknown", displayName = "Guest";
+                if (liff.isLoggedIn()) {
+                    const profile = await liff.getProfile();
+                    userId = profile.userId;
+                    displayName = profile.displayName;
+                }
+
                 const payload = {
                     action: 'submitBooking',
-                    userId: profile.userId,
-                    name: profile.displayName,
+                    userId: userId,
+                    name: displayName,
                     date: selDate,
                     time: selTime,
                     style: document.getElementById('form-style').value,
@@ -238,20 +271,25 @@
                     note: document.getElementById('form-note').value
                 };
 
-                const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
-                const text = await res.text();
+                // 使用 no-cors 模式確保請求發送且不被跨域攔截
+                await fetch(GAS_URL, { 
+                    method: 'POST', 
+                    mode: 'no-cors', 
+                    body: JSON.stringify(payload) 
+                });
 
-                if (text.includes("Success")) {
+                // 因為 no-cors 無法獲得回傳內容，我們直接顯示成功並關閉
+                setTimeout(() => {
                     closeModal();
-                    // 1. 彈出您的專屬語
-                    alert("預約資料已送出，美甲師火速確認中！\n若預約成功會寄送通知。");
-                    // 2. 關閉視窗 (訊息會由後端官方帳號發送)
+                    alert("預約資料已送出，美甲師火速確認中！\n若預約成功會寄送通知喔 ❤️");
                     liff.closeWindow();
-                }
+                }, 1000);
+
             } catch (err) {
-                alert("提交失敗，請檢查網路。");
+                console.error("Submit Error:", err);
+                alert("提交失敗，請私訊美甲師或檢查網路。");
                 btn.disabled = false;
-                btn.innerText = "確認預約";
+                btn.innerHTML = "確認預約";
             }
         }
 
