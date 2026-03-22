@@ -9,9 +9,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .active-tab { color: #db2777; border-bottom: 3px solid #db2777; font-weight: bold; }
-        .calendar-day { min-height: 90px; background: white; border: 0.5px solid #f3f4f6; display: flex; flex-direction: column; align-items: center; padding: 4px 2px; cursor: pointer; }
-        .day-num { font-size: 14px; font-weight: bold; color: #4b5563; margin-bottom: 2px; }
-        .slot-tag { font-size: 10px; color: #db2777; background: #fdf2f8; border-radius: 4px; padding: 1px 4px; margin-bottom: 2px; width: 90%; text-align: center; font-weight: bold; }
+        .calendar-day { min-height: 95px; background: white; border: 0.5px solid #f3f4f6; display: flex; flex-direction: column; align-items: center; padding: 4px 2px; cursor: pointer; }
+        .day-num { font-size: 14px; font-weight: bold; color: #4b5563; margin-bottom: 4px; }
+        .slot-tag { font-size: 10px; color: #db2777; background: #fdf2f8; border-radius: 4px; padding: 2px 4px; margin-bottom: 2px; width: 90%; text-align: center; font-weight: bold; transform: scale(0.9); }
         
         .calendar-day.past { background-color: #f9fafb; cursor: default; opacity: 0.4; }
         .calendar-day.empty { background-color: #fafafa; cursor: default; }
@@ -41,7 +41,7 @@
             <div class="bg-white rounded-3xl p-4 shadow-sm border border-gray-100">
                 <div class="flex justify-between items-center mb-4 px-2">
                     <h2 id="current-month" class="font-bold text-gray-700">載入中...</h2>
-                    <span class="text-[10px] text-pink-600 font-bold">● 可預約</span>
+                    <span class="text-[10px] text-pink-600 font-bold">● 可預約時段</span>
                 </div>
                 <div class="grid grid-cols-7 text-center text-xs mb-2 text-gray-400 font-bold">
                     <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
@@ -51,7 +51,7 @@
         </section>
 
         <section id="page-notices" class="hidden space-y-4"></section>
-        
+
         <section id="page-styles" class="hidden space-y-4">
             <div id="styles-grid" class="grid grid-cols-2 gap-4"></div>
         </section>
@@ -95,7 +95,7 @@
         async function init() {
             try {
                 await liff.init({ liffId: LIFF_ID });
-                if (!liff.isLoggedIn()) liff.login();
+                if (!liff.isLoggedIn()) { liff.login(); return; }
                 const profile = await liff.getProfile();
                 if (profile.pictureUrl) {
                     document.getElementById('user-avatar').src = profile.pictureUrl;
@@ -106,32 +106,44 @@
         }
 
         async function fetchData() {
-            const res = await fetch(`${GAS_URL}?action=getAppData`);
-            const data = await res.json();
-            appData.settings = data.settings || [];
-            appData.styles = data.styles || [];
-            appData.rules = data.rules || [];
-            renderUI();
+            try {
+                const res = await fetch(`${GAS_URL}?action=getAppData`);
+                const data = await res.json();
+                // 對接妳 GAS 的資料結構
+                appData.settings = data.settings || [];
+                appData.styles = data.styles || [];
+                appData.rules = data.rules || [];
+                renderUI();
+            } catch (e) {
+                console.error("Fetch Error:", e);
+                renderCalendar(); 
+            }
         }
 
         function renderUI() {
-            // 款式渲染
-            document.getElementById('styles-grid').innerHTML = appData.styles.map(s => `
-                <div class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 text-center pb-2">
-                    <img src="${s.圖片網址}" class="w-full h-32 object-cover">
-                    <p class="font-bold text-xs mt-2 truncate px-1">${s.名稱}</p>
-                    <p class="text-pink-600 text-xs font-bold">$${s.價格}</p>
-                </div>
-            `).join('');
-            document.getElementById('form-style').innerHTML = appData.styles.map(s => `<option value="${s.名稱}">${s.名稱}</option>`).join('');
+            // 1. 款式渲染
+            const stylesGrid = document.getElementById('styles-grid');
+            if(stylesGrid) {
+                stylesGrid.innerHTML = appData.styles.map(s => `
+                    <div class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 text-center pb-2">
+                        <img src="${s.圖片網址}" class="w-full h-32 object-cover">
+                        <p class="font-bold text-xs mt-2 truncate px-1">${s.名稱}</p>
+                        <p class="text-pink-600 text-xs font-bold">$${s.價格}</p>
+                    </div>
+                `).join('');
+                document.getElementById('form-style').innerHTML = appData.styles.map(s => `<option value="${s.名稱}">${s.名稱}</option>`).join('');
+            }
             
-            // 須知渲染
-            document.getElementById('notices-content').innerHTML = appData.rules.map(r => `
-                <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-pink-500 mb-3">
-                    <h4 class="font-bold text-gray-800 mb-1">${r.標題}</h4>
-                    <p class="text-sm text-gray-500">${r.詳細內容}</p>
-                </div>
-            `).join('');
+            // 2. 須知渲染 (這裡修正了之前找不到 ID 的錯誤)
+            const noticesPage = document.getElementById('page-notices');
+            if(noticesPage) {
+                noticesPage.innerHTML = appData.rules.map(r => `
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-pink-500 mb-3 mx-2">
+                        <h4 class="font-bold text-gray-800 mb-1">${r.標題}</h4>
+                        <p class="text-sm text-gray-500">${r.詳細內容}</p>
+                    </div>
+                `).join('');
+            }
 
             renderCalendar();
         }
@@ -145,6 +157,8 @@
             
             const firstDay = new Date(year, month, 1).getDay();
             const lastDate = new Date(year, month + 1, 0).getDate();
+            
+            // 格式化今天日期以便比對
             const todayStr = `${year}-${String(month+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 
             let html = "";
@@ -152,19 +166,24 @@
 
             for (let i = 1; i <= lastDate; i++) {
                 const dayStr = `${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+                
+                // 比對 GAS 傳來的 formattedDate
                 const match = appData.settings.find(s => s.formattedDate === dayStr);
                 const slots = (match && match.availableSlots) ? match.availableSlots : [];
-                const isToday = dayStr === todayStr;
+                
                 const isPast = dayStr < todayStr;
+                const isToday = dayStr === todayStr;
 
-                // 每個日期格子內的小標籤
+                // 畫出月曆格子上的小標籤 (只顯示有的時段)
                 const slotTags = slots.map(t => `<div class="slot-tag">${t}</div>`).join('');
 
                 html += `
                     <div onclick="${(isPast || slots.length === 0) ? '' : `openModal('${dayStr}', ${JSON.stringify(slots)})`}" 
                          class="calendar-day ${isPast ? 'past' : ''} ${isToday ? 'today' : ''}">
                         <span class="day-num">${i}</span>
-                        ${slotTags}
+                        <div class="w-full flex flex-col items-center overflow-hidden">
+                            ${slotTags}
+                        </div>
                     </div>
                 `;
             }
@@ -176,6 +195,7 @@
             document.getElementById('modal-date-display').innerText = `📅 ${dStr}`;
             const container = document.getElementById('time-options');
             
+            // 彈窗內顯示該日期的可用時段
             container.innerHTML = slots.map(t => `
                 <button type="button" onclick="selectTime('${t}', this)" 
                     class="py-4 rounded-2xl border-2 border-pink-100 text-pink-600 font-bold text-sm bg-white transition-all">
@@ -213,12 +233,13 @@
                     userId: profile.userId, name: profile.displayName,
                     date: selDate, time: selTime,
                     style: document.getElementById('form-style').value,
-                    removeNails: document.getElementById('form-remove').checked ? "是" : "否"
+                    removeNails: document.getElementById('form-remove').checked ? "是" : "否",
+                    note: "" // 妳的 GAS 預計有 note 欄位
                 };
                 await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
                 await liff.sendMessages([{ type: 'text', text: `💅 預約申請已送出！\n日期：${selDate}\n時間：${selTime}\n款式：${payload.style}\n卸甲：${payload.removeNails}\n\n請等待美甲師回覆確認喔！` }]);
                 liff.closeWindow();
-            } catch (err) { alert("傳送失敗，請稍後再試"); btn.disabled = false; btn.innerText = "確認預約"; }
+            } catch (err) { alert("傳送失敗"); btn.disabled = false; btn.innerText = "確認預約"; }
         }
 
         function switchPage(p) {
